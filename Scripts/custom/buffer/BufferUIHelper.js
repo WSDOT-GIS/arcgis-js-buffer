@@ -39,7 +39,11 @@ define([
 		return link;
 	}
 
-	function attachBufferUIToMap(map, buffer) {
+	/**
+	 * Creates a feature layer and adds it to the map.
+	 * @returns {BufferFeatureLayer}
+	 */
+	function attachBufferUIToMap(/**{esri/Map}*/ map, /**BufferUI*/ buffer) {
 		var bufferFeatureLayer, oid = 0, popupTemplate;
 
 		popupTemplate = new PopupTemplate({
@@ -160,6 +164,8 @@ define([
 				console.error("buffer error", error);
 			});
 		});
+
+		return bufferFeatureLayer;
 	}
 
 	return {
