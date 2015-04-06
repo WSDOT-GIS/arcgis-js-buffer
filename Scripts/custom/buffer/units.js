@@ -169,9 +169,26 @@ define(function () {
 
 	}
 
+	/**
+	 * Returns the unit that matches the given unit ID.
+	 * @returns {Unit}
+	 */
+	function getUnitForId(/**{number}*/ unitId) {
+		var unit, output;
+		for (var i = 0; i < units.length; i++) {
+			unit = units[i];
+			if (unit.value === unitId) {
+				output = unit;
+				break;
+			}
+		}
+		return unit;
+	}
+
 	Unit.createUnitSelect = createUnitSelect;
 	Unit.createUnitSelectContents = createUnitSelectContents;
 	Unit.units = units;
+	Unit.getUnitForId = getUnitForId;
 
 	return Unit;
 });
