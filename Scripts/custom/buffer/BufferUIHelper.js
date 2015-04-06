@@ -3,8 +3,10 @@ define([
 	"esri/graphic",
 	"esri/geometry/jsonUtils",
 	"esri/layers/FeatureLayer",
+	"esri/dijit/PopupTemplate",
+	"./units",
 	"esri/geometry/geometryEngineAsync"], function (
-		 Graphic, geometryJsonUtils, FeatureLayer, geometryEngineAsync
+		 Graphic, geometryJsonUtils, FeatureLayer, PopupTemplate, Unit, geometryEngineAsync
 		) {
 	/**
 	 * Adds a "buffer" link to an InfoWindow.
@@ -38,7 +40,30 @@ define([
 	}
 
 	function attachBufferUIToMap(map, buffer) {
-		var bufferFeatureLayer, oid = 0;
+		var bufferFeatureLayer, oid = 0, popupTemplate;
+
+		popupTemplate = new PopupTemplate({
+			title: "Buffer",
+			fieldInfos: [
+				{
+					fieldName: "distance",
+					label: "Buffer Distance",
+					visible: true,
+					format: {
+						places: 0,
+						digitSeparator: true
+					},
+
+				},
+				{
+					fieldName: "unit",
+					label: "Measurement Unit",
+					visible: true,
+				}
+			]
+		});
+
+
 		bufferFeatureLayer = new FeatureLayer({
 			featureSet: null,
 			layerDefinition: {
@@ -54,8 +79,8 @@ define([
 					},
 					{
 						name: "unit",
-						type: "esriFieldTypeInteger",
-						alias: "Measurement Unit ID"
+						type: "esriFieldTypeString",
+						alias: "Measurement Unit"
 					},
 					{
 						name: "unioned",
@@ -67,6 +92,8 @@ define([
 		}, {
 			className: "buffer"
 		});
+
+		bufferFeatureLayer.setInfoTemplate(popupTemplate);
 
 
 		map.addLayer(bufferFeatureLayer);
@@ -110,16 +137,18 @@ define([
 
 			geometryEngineAsync.buffer(detail.geometry, detail.distance, detail.unit, detail.unionResults).then(function (bufferResults) {
 				console.log("buffer results", bufferResults);
+				var unit = Unit.getUnitForId(detail.unit);
+				unit = unit.description;
 				if (bufferResults) {
 					bufferFeatureLayer.suspend();
 					if (!Array.isArray(bufferResults)) {
 						bufferResults = [bufferResults];
 					}
-					bufferResults.forEach(function (geometry) {
+					bufferResults.forEach(function (geometry, i) {
 						var graphic = new Graphic(geometry, null, {
 							oid: oid++,
-							distance: detail.distance,
-							unit: detail.unit,
+							distance: detail.distance[i],
+							unit: unit,
 							unioned: detail.unionResults
 						});
 						bufferFeatureLayer.add(graphic);
