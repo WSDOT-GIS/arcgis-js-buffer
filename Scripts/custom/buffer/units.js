@@ -177,7 +177,7 @@ define(function () {
 		var unit, output;
 		for (var i = 0; i < units.length; i++) {
 			unit = units[i];
-			if (unit.value == unitId) {
+			if (unit.value === unitId) {
 				output = unit;
 				break;
 			}
