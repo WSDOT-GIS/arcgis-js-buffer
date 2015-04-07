@@ -151,7 +151,7 @@ define([
 					bufferResults.forEach(function (geometry, i) {
 						var graphic = new Graphic(geometry, null, {
 							oid: oid++,
-							distance: detail.distance[i],
+							distance: Array.isArray(detail.distance) ? detail.distance[i] : detail.distance,
 							unit: unit,
 							unioned: detail.unionResults
 						});
