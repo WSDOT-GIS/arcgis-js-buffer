@@ -184,7 +184,7 @@ define([
 								unit: unit,
 								unioned: detail.unionResults,
 								area: acres <= 1 ? area : acres,
-								areaUnit: acres <= 1 ? "ft\00b2" : "acres"
+								areaUnit: acres <= 1 ? "ft\u00b2" : "acres"
 							});
 							bufferFeatureLayer.applyEdits([graphic]);
 						});
