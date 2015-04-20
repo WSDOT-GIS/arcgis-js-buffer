@@ -43,7 +43,7 @@ define([
 	 * Creates a feature layer and adds it to the map.
 	 * @returns {BufferFeatureLayer}
 	 */
-	function attachBufferUIToMap(/**{esri/Map}*/ map, /**BufferUI*/ buffer) {
+	function attachBufferUIToMap(/**{esri/Map}*/ map, /**{BufferUI}*/ buffer, /**{string}*/layerId) {
 		var bufferFeatureLayer, oid = 0, popupTemplate;
 
 		popupTemplate = new PopupTemplate({
@@ -63,6 +63,20 @@ define([
 					fieldName: "unit",
 					label: "Measurement Unit",
 					visible: true,
+				},
+				{
+					fieldName: "area",
+					label: "Area",
+					visible: true,
+					format: {
+						places: 0,
+						digitSeparator: true
+					},
+				},
+				{
+					fieldName: "areaUnit",
+					label: "Area Unit",
+					visible: true
 				}
 			]
 		});
@@ -90,10 +104,21 @@ define([
 						name: "unioned",
 						type: "esriFieldTypeSmallInteger",
 						alias: "Is Unioned"
+					},
+					{
+						name: "area",
+						type: "esriFieldTypeDouble",
+						alias: "Area"
+					},
+					{
+						name: "areaUnit",
+						type: "esriFieldTypeString",
+						alias: "Area Unit"
 					}
 				]
 			}
 		}, {
+			id: layerId || "Buffer",
 			className: "buffer"
 		});
 
@@ -143,21 +168,31 @@ define([
 				console.log("buffer results", bufferResults);
 				var unit = Unit.getUnitForId(detail.unit);
 				unit = unit.description;
+				var areaUnit = "esriSquareFeet";
+				var promises = [];
 				if (bufferResults) {
 					bufferFeatureLayer.suspend();
 					if (!Array.isArray(bufferResults)) {
 						bufferResults = [bufferResults];
 					}
 					bufferResults.forEach(function (geometry, i) {
-						var graphic = new Graphic(geometry, null, {
-							oid: oid++,
-							distance: detail.distance[i],
-							unit: unit,
-							unioned: detail.unionResults
+						var promise = geometryEngineAsync.geodesicArea(geometry, areaUnit).then(function (area) {
+							var acres = area / 43560;
+							var graphic = new Graphic(geometry, null, {
+								oid: oid++,
+								distance: Array.isArray(detail.distance) ? detail.distance[i] : detail.distance,
+								unit: unit,
+								unioned: detail.unionResults,
+								area: acres <= 1 ? area : acres,
+								areaUnit: acres <= 1 ? "ft\00b2" : "acres"
+							});
+							bufferFeatureLayer.applyEdits([graphic]);
 						});
-						bufferFeatureLayer.add(graphic);
+						promises.push(promise);
 					});
-					bufferFeatureLayer.resume();
+					Promise.all(promises).then(function () {
+						bufferFeatureLayer.resume();
+					});
 				}
 				buffer.clearGeometryList();
 			}, function (error) {

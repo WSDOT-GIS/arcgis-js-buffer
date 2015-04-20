@@ -174,12 +174,15 @@ define(function () {
 	 * @returns {Unit}
 	 */
 	function getUnitForId(/**{number}*/ unitId) {
-		var unit, output;
-		for (var i = 0; i < units.length; i++) {
-			unit = units[i];
-			if (unit.value === unitId) {
-				output = unit;
-				break;
+		var unit, output, i, l;
+
+		if (typeof unitId === "number" || typeof unitId === "string") {
+			for (i = 0, l = units.length; i < l; i++) {
+				unit = units[i];
+				if ((typeof unitId === "number" && unit.value === unitId) || (typeof unitId === "string" && (unit.name === unitId || unit.description === unitId))) {
+					output = unit;
+					break;
+				}
 			}
 		}
 		return unit;
