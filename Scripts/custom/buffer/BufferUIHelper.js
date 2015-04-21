@@ -187,10 +187,21 @@ define([
 								areaUnit: acres <= 1 ? "ft\u00b2" : "acres"
 							});
 							bufferFeatureLayer.applyEdits([graphic]);
+						}, function (error) {
+							var graphic = new Graphic(geometry, null, {
+								oid: oid++,
+								distance: Array.isArray(detail.distance) ? detail.distance[i] : detail.distance,
+								unit: unit,
+								unioned: detail.unionResults,
+								areaError: error
+							});
+							bufferFeatureLayer.applyEdits([graphic]);
 						});
 						promises.push(promise);
 					});
 					Promise.all(promises).then(function () {
+						bufferFeatureLayer.resume();
+					}, function () {
 						bufferFeatureLayer.resume();
 					});
 				}
