@@ -168,7 +168,6 @@ define([
 				console.log("buffer results", bufferResults);
 				var unit = Unit.getUnitForId(detail.unit);
 				unit = unit.description;
-				var areaUnit = "esriSquareFeet";
 				var promises = [];
 				if (bufferResults) {
 					bufferFeatureLayer.suspend();
@@ -176,15 +175,15 @@ define([
 						bufferResults = [bufferResults];
 					}
 					bufferResults.forEach(function (geometry, i) {
-						var promise = geometryEngineAsync.geodesicArea(geometry, areaUnit).then(function (area) {
-							var acres = area / 43560;
+						var promise = geometryEngineAsync.planarArea(geometry).then(function (area) {
+							var acres = area / 4047;
 							var graphic = new Graphic(geometry, null, {
 								oid: oid++,
 								distance: Array.isArray(detail.distance) ? detail.distance[i] : detail.distance,
 								unit: unit,
 								unioned: detail.unionResults,
-								area: acres <= 1 ? area : acres,
-								areaUnit: acres <= 1 ? "ft\u00b2" : "acres"
+								area: acres < 1 ? acres * 43560 : acres,
+								areaUnit: acres < 1 ? "ft\u00b2" : "ac"
 							});
 							bufferFeatureLayer.applyEdits([graphic]);
 						}, function (error) {
