@@ -9,4 +9,4 @@ Registered with [Bower] as `arcgis-buffer-ui`.
 
 [![bitHound Score](https://www.bithound.io/WSDOT-GIS/arcgis-js-buffer/badges/score.svg)](https://www.bithound.io/WSDOT-GIS/arcgis-js-buffer)
 
-* [Bower](http://bower.io)
+[Bower]:http://bower.io
