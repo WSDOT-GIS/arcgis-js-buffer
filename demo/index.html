@@ -23,17 +23,32 @@
                 async: true,
                 packages: [
                     {
-                        name: "buffer",
-                        location: root + "/Scripts/custom/buffer"
+                        name: "BufferUI",
+                        location: root + "/..",
+                        main: "BufferUI"
                     }
                 ]
 
             };
             window.dojoConfig = dojoConfig;
         }(location.pathname.replace(/\/[^\/]*$/, "")));
+
+        // Add promise polyfill if necessary.
+        (function () {
+            if (!window.Promise) {
+                [
+                    "../bower_components/setImmediate/setImmediate.js",
+                    "../bower_components/promises/promise.js"
+                ].forEach(function (path) {
+                    var scriptTag = document.createElement("script");
+                    scriptTag.src = path;
+                    document.head.appendChild(scriptTag);
+                });
+            }
+        }());
     </script>
+    <script src="../bower_components/customevent-polyfill/customevent-polyfill.min.js"></script>
     <script src="//js.arcgis.com/3.13/init.js"></script>
-    <script src="//cdn.polyfill.io/v1/polyfill.min.js?features=Promise,CustomEvent"></script>
-    <script src="Scripts/index.js"></script>
+    <script src="index.js"></script>
 </body>
 </html>

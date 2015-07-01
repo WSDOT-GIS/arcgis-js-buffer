@@ -2,8 +2,8 @@
 /*global require*/
 require(["esri/arcgis/utils",
 	"esri/config",
-	"buffer",
-	"buffer/BufferUIHelper",
+	"BufferUI",
+	"BufferUI/BufferUIHelper",
 	"dojo/text!./webmap.json"
 ], function (arcgisUtils, esriConfig, BufferUI, BufferUIHelper, webmap) {
 	"use strict";
