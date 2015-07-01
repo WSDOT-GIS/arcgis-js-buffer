@@ -55,9 +55,9 @@
     <Content Include="units.js" />
     <Content Include="Web.config" />
     <Content Include="demo\webmap.json" />
-    <Content Include="LICENSE" />
     <Content Include="README.md" />
     <Content Include="bower.json" />
+    <Content Include="UNLICENSE" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
