@@ -57,6 +57,7 @@
     <Content Include="demo\webmap.json" />
     <Content Include="LICENSE" />
     <Content Include="README.md" />
+    <Content Include="bower.json" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
