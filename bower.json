@@ -28,7 +28,7 @@
     "test",
     "tests"
   ],
-  "dependencies": {
+  "devDependencies": {
     "customevent-polyfill": "~1.0.0",
     "promises": "~1.0.10"
   }
