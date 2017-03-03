@@ -1,0 +1,19 @@
+{
+  "name": "arcgis-js-buffer",
+  "version": "1.0.0",
+  "description": "Buffer UI for ArcGIS API for JavaScript",
+  "main": "BufferUI.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WSDOT-GIS/arcgis-js-buffer.git"
+  },
+  "author": "",
+  "license": "Unlicense",
+  "bugs": {
+    "url": "https://github.com/WSDOT-GIS/arcgis-js-buffer/issues"
+  },
+  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme"
+}
