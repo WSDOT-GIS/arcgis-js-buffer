@@ -1,5 +1,5 @@
 {
-  "name": "arcgis-js-buffer",
+  "name": "@wsdot/arcgis-buffer-ui",
   "version": "1.1.0",
   "description": "Buffer UI for ArcGIS API for JavaScript",
   "main": "BufferUI.js",
