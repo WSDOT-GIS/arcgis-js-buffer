@@ -1,8 +1,14 @@
 {
   "name": "arcgis-js-buffer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Buffer UI for ArcGIS API for JavaScript",
   "main": "BufferUI.js",
+  "types": "BufferUI.d.ts",
+  "files": [
+    "*.js",
+    "Templates",
+    "*.d.ts"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,5 +21,10 @@
   "bugs": {
     "url": "https://github.com/WSDOT-GIS/arcgis-js-buffer/issues"
   },
-  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme"
+  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme",
+  "devDependencies": {
+    "@types/arcgis-js-api": "^3.23",
+    "tslint": "^5.9.1",
+    "typescript": "^2.7.2"
+  }
 }
