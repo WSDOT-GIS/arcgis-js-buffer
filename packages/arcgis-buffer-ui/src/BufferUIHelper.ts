@@ -1,0 +1,249 @@
+import Popup = require("esri/dijit/Popup");
+import PopupTemplate = require("esri/dijit/PopupTemplate");
+import Geometry = require("esri/geometry/Geometry");
+import geometryEngineAsync = require("esri/geometry/geometryEngineAsync");
+import geometryJsonUtils = require("esri/geometry/jsonUtils");
+import Polygon = require("esri/geometry/Polygon");
+import Graphic = require("esri/graphic");
+import FeatureLayer = require("esri/layers/FeatureLayer");
+import EsriMap = require("esri/map");
+import BufferUI from "./BufferUI";
+import { getUnitForId } from "./units";
+
+/**
+ * Adds a "buffer" link to an InfoWindow.
+ * When clicked it will add the selected feature
+ * to the BufferUI geometries list.
+ */
+function addBufferLink(infoWindow: Popup, bufferUI: BufferUI) {
+  const actionList = infoWindow.domNode.querySelector(".actionList");
+  const link = document.createElement("a");
+  const docFrag = document.createDocumentFragment();
+  link.textContent = "Buffer";
+  link.href = "#";
+  link.title = "Add selected geometry to Buffer UI list";
+  link.classList.add("action");
+  link.classList.add("buffer");
+  // Add a space before adding link.
+  docFrag.appendChild(document.createTextNode(" "));
+  docFrag.appendChild(link);
+
+  link.onclick = () => {
+    const feature = infoWindow.features[infoWindow.selectedIndex];
+    bufferUI.addFeature(feature);
+
+    return false;
+  };
+
+  actionList.appendChild(docFrag);
+  return link;
+}
+
+/**
+ * Creates a feature layer and adds it to the map.
+ */
+function attachBufferUIToMap(
+  map: EsriMap,
+  buffer: BufferUI,
+  layerId?: string
+): FeatureLayer {
+  let oid = 0;
+
+  const popupTemplate = new PopupTemplate({
+    title: "Buffer",
+    fieldInfos: [
+      {
+        fieldName: "distance",
+        label: "Buffer Distance",
+        visible: true,
+        format: {
+          places: 0,
+          digitSeparator: true
+        }
+      },
+      {
+        fieldName: "unit",
+        label: "Measurement Unit",
+        visible: true
+      },
+      {
+        fieldName: "area",
+        label: "Area",
+        visible: true,
+        format: {
+          places: 0,
+          digitSeparator: true
+        }
+      },
+      {
+        fieldName: "areaUnit",
+        label: "Area Unit",
+        visible: true
+      }
+    ]
+  });
+
+  const bufferFeatureLayer = new FeatureLayer(
+    {
+      featureSet: null,
+      layerDefinition: {
+        geometryType: "esriGeometryPolygon",
+        fields: [
+          {
+            name: "oid",
+            type: "esriFieldTypeOID"
+          },
+          {
+            name: "distance",
+            type: "esriFieldTypeDouble"
+          },
+          {
+            name: "unit",
+            type: "esriFieldTypeString",
+            alias: "Measurement Unit"
+          },
+          {
+            name: "unioned",
+            type: "esriFieldTypeSmallInteger",
+            alias: "Is Unioned"
+          },
+          {
+            name: "area",
+            type: "esriFieldTypeDouble",
+            alias: "Area"
+          },
+          {
+            name: "areaUnit",
+            type: "esriFieldTypeString",
+            alias: "Area Unit"
+          }
+        ]
+      }
+    },
+    {
+      id: layerId || "Buffer",
+      className: "buffer"
+    }
+  );
+
+  bufferFeatureLayer.setInfoTemplate(popupTemplate);
+
+  map.addLayer(bufferFeatureLayer);
+
+  addBufferLink(map.infoWindow as Popup, buffer);
+
+  buffer.form.addEventListener("clear-graphics", () => {
+    bufferFeatureLayer.clear();
+  });
+
+  buffer.form.addEventListener("buffer", (e: any) => {
+    const { detail } = e;
+
+    // Convert regular objects into esri/Geometry objects.
+    if (Array.isArray(detail.geometry)) {
+      detail.geometry = detail.geometry.map(
+        geometryJsonUtils.fromJson,
+        detail.geometry
+      );
+    } else {
+      detail.geometry = geometryJsonUtils.fromJson(detail.geometry);
+    }
+
+    // The geometry engine requires that the number of geometries and distances be the same.
+    // If multiple distances are provided but only a single geometry, that geometry will be
+    // buffered for each distance.
+    if (Array.isArray(detail.distance) && !Array.isArray(detail.geometry)) {
+      detail.geometry = (() => {
+        const outGeoArray = new Array<Geometry>(detail.distance.length);
+        for (let i = 0, l = detail.distance.length; i < l; i += 1) {
+          outGeoArray[i] = detail.geometry;
+        }
+        return outGeoArray;
+      })();
+    } else if (
+      !Array.isArray(detail.distance) &&
+      Array.isArray(detail.geometry)
+    ) {
+      detail.distance = (() => {
+        const outDistanceArray = new Array<number>();
+        for (let i = 0; i < detail.geometry.length; i++) {
+          outDistanceArray[i] = detail.distance;
+        }
+        return outDistanceArray;
+      })();
+    }
+
+    geometryEngineAsync
+      .buffer(
+        detail.geometry,
+        detail.distance,
+        detail.unit,
+        detail.unionResults
+      )
+      .then(
+        (bufferResults: Polygon | Polygon[]) => {
+          console.log("buffer results", bufferResults);
+          const unit = getUnitForId(detail.unit);
+          // unit = unit.description;
+          const promises = new Array<Promise<any>>();
+          if (bufferResults) {
+            bufferFeatureLayer.suspend();
+            if (!Array.isArray(bufferResults)) {
+              bufferResults = [bufferResults];
+            }
+            bufferResults.forEach((geometry: Geometry, i: number) => {
+              const promise = geometryEngineAsync
+                .planarArea(geometry, undefined as any)
+                .then(
+                  (area: number) => {
+                    console.debug("area", area);
+                    const acres = area / 4047;
+                    const graphic = new Graphic(geometry, undefined, {
+                      oid: oid++,
+                      distance: Array.isArray(detail.distance)
+                        ? detail.distance[i]
+                        : detail.distance,
+                      unit: unit.description,
+                      unioned: detail.unionResults,
+                      area: acres < 1 ? acres * 43560 : acres,
+                      areaUnit: acres < 1 ? "ft\u00b2" : "ac"
+                    });
+                    bufferFeatureLayer.applyEdits([graphic]);
+                  },
+                  (error: Error) => {
+                    console.error("area", error);
+                    const graphic = new Graphic(geometry, undefined, {
+                      oid: oid++,
+                      distance: Array.isArray(detail.distance)
+                        ? detail.distance[i]
+                        : detail.distance,
+                      unit: unit.description,
+                      unioned: detail.unionResults,
+                      areaError: error
+                    });
+                    bufferFeatureLayer.applyEdits([graphic]);
+                  }
+                );
+              promises.push(promise);
+            });
+            Promise.all(promises).then(
+              () => {
+                bufferFeatureLayer.resume();
+              },
+              () => {
+                bufferFeatureLayer.resume();
+              }
+            );
+          }
+          buffer.clearGeometryList();
+        },
+        (error: Error) => {
+          console.error("buffer error", error);
+        }
+      );
+  });
+
+  return bufferFeatureLayer;
+}
+
+export { addBufferLink, attachBufferUIToMap };
