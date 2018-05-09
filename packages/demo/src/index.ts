@@ -1,8 +1,9 @@
-import { attachBufferUIToMap, BufferUI } from "@wsdot/arcgis-buffer-ui";
+import { BufferUI } from "@wsdot/arcgis-buffer-ui";
+import { attachBufferUIToMap } from "@wsdot/arcgis-v3-buffer-ui-helper";
 import arcgisUtils = require("esri/arcgis/utils");
 import esriConfig = require("esri/config");
 
-// Specify CORS enabled servers.
+// Specify CORS enabled servers and HTTPs supporting domains.
 [
   "www.wsdot.wa.gov",
   "wsdot.wa.gov",
@@ -10,6 +11,7 @@ import esriConfig = require("esri/config");
   "gispublic.dfw.wa.gov"
 ].forEach(svr => {
   esriConfig.defaults.io.corsEnabledServers.push(svr);
+  esriConfig.defaults.io.httpsDomains.push(svr);
 });
 // Since CORS servers are explicitly specified, CORS detection is not necessary.
 // This prevents the following types of errors from appearing in the console:

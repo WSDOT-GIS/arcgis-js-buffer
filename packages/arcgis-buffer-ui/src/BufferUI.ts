@@ -1,9 +1,32 @@
-import Geometry = require("esri/geometry/Geometry");
-import Graphic = require("esri/graphic");
+/**
+ * This module defines the user interface.
+ */
+
+import { Feature as Graphic, Geometry } from "arcgis-rest-api";
 import { createUnitSelectContents, getUnitForId } from "./units";
 
+/**
+ * This interface is for objects that may or may not have a toJson function.
+ * Intended for use as an Intersection Type along with arcgis-rest-api Geometry
+ * For instances that may be either a basic object representing a geometry or
+ * a specialized ArcGIS API Geometry object.
+ */
+export interface IMayHaveToJson {
+  /**
+   * ArcGIS API object will have a toJson function that converts it to a standard JavaScript object.
+   */
+  toJson?: () => any;
+}
+
+/**
+ * The distance input can have either a single number or a comma separated
+ * list of numbers. This Regex will match valid values for that control.
+ */
 const distancesPattern = /\d+(?:\.\d+)?([,\s]+\d+(?:\.\d+)?)*/;
 
+/**
+ * The HTML markup for the input form.
+ */
 const template = `<form class="buffer-ui">
 <div>
 	<label>Distances</label>
@@ -49,11 +72,46 @@ function getFormFromTemplate(templateMarkup: string): HTMLFormElement {
 }
 
 /**
+ * The *detail* of a *buffer* CustomEvent.
+ */
+export interface IBufferEventDetail {
+  /**
+   * The geometry or geometries to be buffered.
+   */
+  geometry: Geometry | Geometry[] | null;
+  /**
+   * The distance(s) around each geometry to buffer.
+   */
+  distance: number | number[] | null;
+  /**
+   * Measurement unit.
+   * @see https://developers.arcgis.com/javascript/jsapi/bufferparameters-amd.html#unit
+   */
+  unit: number;
+  /**
+   * Boolean value indicating that the output buffer geometries should be unioned.
+   */
+  unionResults: boolean;
+}
+
+/**
  * UI for the Buffer operation on an ArcGIS Server Geometry service.
  * @class
  */
 export default class BufferUI {
+  /**
+   * The HTML form that the user interacts with.
+   *
+   * This form emits the following CustomEvents.
+   *
+   * * buffer - This event is emitted when a user submits the form with valid values. The detail property of this event is an IBufferEventDetail.
+   * * clear-graphics - This event is emitted when the user clicks the "Clear Graphics" button.
+   */
   public form: HTMLFormElement;
+  /**
+   * Creates a new instance of BufferUI
+   * @param root The HTML element that will contain the HTML form of this control.
+   */
   constructor(public root: HTMLElement) {
     const self = this;
     const form = getFormFromTemplate(template);
@@ -64,7 +122,7 @@ export default class BufferUI {
     form.onsubmit = () => {
       const geometries = self.getGeometries();
       if (geometries) {
-        const evt = new CustomEvent("buffer", {
+        const evt = new CustomEvent<IBufferEventDetail>("buffer", {
           detail: {
             geometry: self.getGeometries(),
             distance: self.getDistances(),
@@ -116,6 +174,10 @@ export default class BufferUI {
     return distances;
   }
 
+  /**
+   * Adds a feature to the UI's list.
+   * @param feature A feature
+   */
   public addFeature(feature: Graphic) {
     const list = this.root.querySelector(".geometry-list")!;
     const li = document.createElement("li");
@@ -134,7 +196,7 @@ export default class BufferUI {
       throw new TypeError("Input must be a Graphic or Geometry");
     }
 
-    let geometry = getGeometry(feature);
+    let geometry = getGeometry(feature) as Geometry & IMayHaveToJson;
     if (geometry.toJson) {
       geometry = geometry.toJson();
     }
@@ -144,7 +206,10 @@ export default class BufferUI {
     list.appendChild(li);
   }
 
-  public getGeometries() {
+  /**
+   * Gets all of the geometries stored in the list items' data-geometry attributes
+   */
+  public getGeometries(): Geometry | Geometry[] | null {
     const geometries = new Array<Geometry>();
     const listItems = this.root.querySelectorAll<HTMLLIElement>(
       ".geometry-list > li"
@@ -162,6 +227,9 @@ export default class BufferUI {
     return geometries;
   }
 
+  /**
+   * Clears the list of geometries in the UI.
+   */
   public clearGeometryList() {
     const ul = this.root.querySelector(".geometry-list")!;
     ul.innerHTML = "";

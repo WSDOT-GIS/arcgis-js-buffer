@@ -1,3 +1,7 @@
+/**
+ * This module is used to make the BufferUI interact with an ArcGIS API for JavaScript v3 map.
+ */
+
 import Popup = require("esri/dijit/Popup");
 import PopupTemplate = require("esri/dijit/PopupTemplate");
 import Geometry = require("esri/geometry/Geometry");
@@ -7,16 +11,20 @@ import Polygon = require("esri/geometry/Polygon");
 import Graphic = require("esri/graphic");
 import FeatureLayer = require("esri/layers/FeatureLayer");
 import EsriMap = require("esri/map");
-import BufferUI from "./BufferUI";
-import { getUnitForId } from "./units";
+import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
 
 /**
- * Adds a "buffer" link to an InfoWindow.
+ * Adds a "buffer" link to an InfoWindow's ".actionList" section.
  * When clicked it will add the selected feature
  * to the BufferUI geometries list.
+ * @param infoWindow - A Popup
+ * @param bufferUI - A BufferUI object.
  */
-function addBufferLink(infoWindow: Popup, bufferUI: BufferUI) {
-  const actionList = infoWindow.domNode.querySelector(".actionList");
+export function addBufferLink(infoWindow: Popup, bufferUI: BufferUI) {
+  const actionList = (infoWindow.domNode as Element).querySelector(".actionList");
+  if (!actionList) {
+    throw new Error("Info window does not have an element of class actionList.");
+  }
   const link = document.createElement("a");
   const docFrag = document.createDocumentFragment();
   link.textContent = "Buffer";
@@ -41,11 +49,15 @@ function addBufferLink(infoWindow: Popup, bufferUI: BufferUI) {
 
 /**
  * Creates a feature layer and adds it to the map.
+ * @param map
+ * @param buffer
+ * @param layerId - Specifies the id property's value of the layer FeatureLayer that will be used to display the buffer polygons.
+ * @returns Returns the FeatureLayer that was created to display buffer polygons.
  */
-function attachBufferUIToMap(
+export function attachBufferUIToMap(
   map: EsriMap,
   buffer: BufferUI,
-  layerId?: string
+  layerId: string = "Buffer"
 ): FeatureLayer {
   let oid = 0;
 
@@ -121,7 +133,7 @@ function attachBufferUIToMap(
       }
     },
     {
-      id: layerId || "Buffer",
+      id: layerId,
       className: "buffer"
     }
   );
@@ -206,7 +218,7 @@ function attachBufferUIToMap(
                       unit: unit.description,
                       unioned: detail.unionResults,
                       area: acres < 1 ? acres * 43560 : acres,
-                      areaUnit: acres < 1 ? "ft\u00b2" : "ac"
+                      areaUnit: acres < 1 ? "ft\u00b2" : "ac" // ft. squared or acres
                     });
                     bufferFeatureLayer.applyEdits([graphic]);
                   },
@@ -245,5 +257,3 @@ function attachBufferUIToMap(
 
   return bufferFeatureLayer;
 }
-
-export { addBufferLink, attachBufferUIToMap };

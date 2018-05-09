@@ -1,12 +1,21 @@
-// Define the available units. See https://developers.arcgis.com/javascript/jsapi/bufferparameters-amd.html#unit
+/**
+ * Module for working with measurment units.
+ */
 
+/**
+ * Represents a measurement unit.
+ * @see https://developers.arcgis.com/javascript/jsapi/bufferparameters-amd.html#unit
+ */
 export interface IUnit {
   name: string;
   value: number;
   description: string;
 }
 
-const units: IUnit[] = [
+/**
+ * Array of possible measurement units.
+ */
+export const units: IUnit[] = [
   {
     name: "50KilometerLength",
     value: 109030,
@@ -94,6 +103,13 @@ const units: IUnit[] = [
   // { "name": "UKNauticalMile", "value": 109013, "description": "UK nautical mile (pre-1970)" }
 ];
 
+/**
+ * Creates an <option> corresponding to a measurement unit.
+ * @param unit measurement unit info
+ * @example
+ * const option = unitToOption({ name: "StatuteMile", value: 9093, description: "Statute Mile" });
+ * // Returns <option value='9093' data-name='StatuteMile'>Statute Mile</option>
+ */
 export function unitToOption(unit: IUnit) {
   const option = document.createElement("option");
   option.value = unit.value.toString(10);
@@ -105,7 +121,7 @@ export function unitToOption(unit: IUnit) {
 /**
  * Creates the contents of a unit <select>.
  * @param {string} [defaultName] - The name of the measurment unit that will be set as the default.
- * @returns {DocumentFragment}
+ * @returns {DocumentFragment} - Document fragment containing options and optgroups to be added to a select element.
  */
 export function createUnitSelectContents(
   defaultName: string
@@ -174,6 +190,10 @@ export function createUnitSelectContents(
   return frag;
 }
 
+/**
+ * Creates a select element for selecting a measurement unit.
+ * @param defaultName The name of the unit that will be the default selected option.
+ */
 export function createUnitSelect(defaultName: string) {
   const frag = createUnitSelectContents(defaultName);
   const select = document.createElement("select");

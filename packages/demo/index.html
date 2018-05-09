@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
     <title>Buffer UI Demo</title>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-    <link rel="stylesheet" href="https://js.arcgis.com/3.24/esri/css/esri.css" />
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    <link rel="stylesheet" href="https://js.arcgis.com/3.24/esri/css/esri.css" integrity="sha384-A+gktoskTHIYoOs+rRE9o3zySxPWlv1QdHmWV6XDVU9l7kEUPHVGhr22uZsjDYmX"
+        crossorigin="anonymous" />
     <link href="Styles/index.css" rel="stylesheet" />
 </head>
+
 <body>
     <div id="flexcontainer">
         <div id="mapContainer">
@@ -19,9 +22,12 @@
         <a href="https://github.com/WSDOT-GIS/arcgis-js-buffer/" target="_blank">Source on GitHub</a>
     </div>
     <script>
-        (function(root) {
+        (function (root) {
             var dojoConfig = {
                 async: true,
+                has: {
+                    "esri-featurelayer-webgl": 1
+                },
                 packages: [
                     {
                         name: "app",
@@ -34,7 +40,9 @@
             window.dojoConfig = dojoConfig;
         }(location.pathname.replace(/\/[^\/]*$/, "")));
     </script>
-    <script src="https://js.arcgis.com/3.24/"></script>
+    <script src="https://js.arcgis.com/3.24/init.js" integrity="sha384-d3/yJY8yRh6+P0mDJiw+AUk3XMgvO4Q735PrL8HCBQ4DK6ab4/xwyzlkIWiIw2rS"
+        crossorigin="anonymous"></script>
     <script>require(["app"]);</script>
 </body>
+
 </html>
