@@ -1,5 +1,5 @@
 import { BufferUI } from "@wsdot/arcgis-buffer-ui";
-import { attachBufferUIToMap } from "@wsdot/arcgis-v3-buffer-ui-helper";
+import { attachBufferUIToMap } from "@wsdot/arcgis-buffer-ui-connector-v3";
 import arcgisUtils = require("esri/arcgis/utils");
 import esriConfig = require("esri/config");
 

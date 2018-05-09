@@ -1,5 +1,5 @@
 {
-  "name": "@wsdot/arcgis-v3-buffer-ui-helper",
+  "name": "@wsdot/arcgis-buffer-ui-connector-v3",
   "version": "1.0.0",
   "main": "dist/BufferUIHelper.js",
   "types": "dist/BufferUIHelper.d.ts",

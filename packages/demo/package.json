@@ -24,6 +24,6 @@
   },
   "dependencies": {
     "@wsdot/arcgis-buffer-ui": "^1.1.0",
-    "@wsdot/arcgis-v3-buffer-ui-helper": "^1.0.0"
+    "@wsdot/arcgis-buffer-ui-connector-v3": "^1.0.0"
   }
 }
