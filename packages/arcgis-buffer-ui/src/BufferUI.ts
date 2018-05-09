@@ -72,6 +72,26 @@ function getFormFromTemplate(templateMarkup: string): HTMLFormElement {
 }
 
 /**
+ * If given a graphic object, returns its geometry property.
+ * If given a geometry object, simply returns the input object.
+ * @param featureOrGeometry A graphic or geometry object.
+ * @throws {TypeError} Thrown if the input object is neither a geometry nor contains a geometry.
+ */
+function getGeometry(featureOrGeometry: Graphic | Geometry) {
+  if ((featureOrGeometry as Graphic).geometry) {
+    return (featureOrGeometry as Graphic).geometry;
+  } else if (
+    featureOrGeometry.hasOwnProperty("x") ||
+    featureOrGeometry.hasOwnProperty("points") ||
+    featureOrGeometry.hasOwnProperty("rings") ||
+    featureOrGeometry.hasOwnProperty("paths")
+  ) {
+    return featureOrGeometry as Geometry;
+  }
+  throw new TypeError("Input must be a Graphic or Geometry");
+}
+
+/**
  * The *detail* of a *buffer* CustomEvent.
  */
 export interface IBufferEventDetail {
@@ -120,16 +140,14 @@ export default class BufferUI {
     this.form = form;
 
     form.onsubmit = () => {
-      const geometries = self.getGeometries();
+      const geometries = { self };
       if (geometries) {
         const evt = new CustomEvent<IBufferEventDetail>("buffer", {
           detail: {
-            geometry: self.getGeometries(),
-            distance: self.getDistances(),
-            unit: parseInt(self.form.unit.value, 10),
-            unionResults: Boolean(
-              self.form.querySelector("[name=union]:checked")
-            )
+            geometry: self.geometries,
+            distance: self.distances,
+            unit: self.unit,
+            unionResults: self.unionResults
           }
         });
         form.dispatchEvent(evt);
@@ -160,7 +178,7 @@ export default class BufferUI {
   /**
    * Gets the distances entered in the distances box.
    */
-  public getDistances() {
+  public get distances(): number | number[] | null {
     let distances = null;
     const s: string = this.form.distances.value;
     if (s) {
@@ -182,20 +200,6 @@ export default class BufferUI {
     const list = this.root.querySelector(".geometry-list")!;
     const li = document.createElement("li");
 
-    function getGeometry(featureOrGeometry: Graphic | Geometry) {
-      if ((featureOrGeometry as Graphic).geometry) {
-        return (featureOrGeometry as Graphic).geometry;
-      } else if (
-        featureOrGeometry.hasOwnProperty("x") ||
-        featureOrGeometry.hasOwnProperty("points") ||
-        featureOrGeometry.hasOwnProperty("rings") ||
-        featureOrGeometry.hasOwnProperty("paths")
-      ) {
-        return featureOrGeometry;
-      }
-      throw new TypeError("Input must be a Graphic or Geometry");
-    }
-
     let geometry = getGeometry(feature) as Geometry & IMayHaveToJson;
     if (geometry.toJson) {
       geometry = geometry.toJson();
@@ -209,7 +213,7 @@ export default class BufferUI {
   /**
    * Gets all of the geometries stored in the list items' data-geometry attributes
    */
-  public getGeometries(): Geometry | Geometry[] | null {
+  public get geometries(): Geometry | Geometry[] | null {
     const geometries = new Array<Geometry>();
     const listItems = this.root.querySelectorAll<HTMLLIElement>(
       ".geometry-list > li"
@@ -225,6 +229,20 @@ export default class BufferUI {
       return geometries[0];
     }
     return geometries;
+  }
+
+  /**
+   * Returns an integer representing a measurement unit.
+   */
+  public get unit() {
+    return parseInt(this.form.unit.value, 10);
+  }
+
+  /**
+   * Returns a boolean value indicating if the union checkbox is currently checked.
+   */
+  public get unionResults() {
+    return Boolean(this.form.querySelector("[name=union]:checked"));
   }
 
   /**
