@@ -14,6 +14,7 @@
     "@wsdot/arcgis-buffer-ui": "^2.0.0-beta.2"
   },
   "devDependencies": {
+    "@types/arcgis-js-api": "^3.24.0 < 4",
     "prettier": "^1.12.1",
     "tslint": "^5.10.0",
     "tslint-config-prettier": "^1.12.0",

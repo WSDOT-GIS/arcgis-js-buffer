@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>Buffer UI Demo</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.7/esri/css/main.css">
+    <link href="Styles/index.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="flexcontainer">
+        <div id="mapContainer">
+            <div id="map"></div>
+        </div>
+        <div id="tools">
+            <div id="buffer"></div>
+        </div>
+    </div>
+    <div id="githubLink">
+        <a href="https://github.com/WSDOT-GIS/arcgis-js-buffer/" target="_blank">Source on GitHub</a>
+    </div>
+    <script>
+        (function (root) {
+            var dojoConfig = {
+                async: true,
+                has: {
+                    "esri-featurelayer-webgl": 1
+                },
+                packages: [
+                    {
+                        name: "app",
+                        location: root + "/dist",
+                        main: "index"
+                    }
+                ]
+
+            };
+            window.dojoConfig = dojoConfig;
+        }(location.pathname.replace(/\/[^\/]*$/, "")));
+    </script>
+    <script src="https://js.arcgis.com/4.7/"></script>
+    <script>require(["app"]);</script>
+</body>
+
+</html>

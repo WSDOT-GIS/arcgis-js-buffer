@@ -1,0 +1,29 @@
+{
+  "name": "@wsdot/arcgis-buffer-ui-connector-v4",
+  "version": "2.0.0-beta.2",
+  "description": "Connects @wsdot/arcgis-buffer-ui to an ArcGIS API (v4) map ",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/*"
+  ],
+  "author": "WSDOT",
+  "license": "Unlicense",
+  "scripts": {
+    "prepare": "tsc"
+  },
+  "devDependencies": {
+    "@types/arcgis-js-api": "^4.7.0",
+    "prettier": "^1.12.1",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.12.0",
+    "tslint-plugin-prettier": "^1.3.0",
+    "typescript": "^2.8.3"
+  },
+  "dependencies": {
+    "@wsdot/arcgis-buffer-ui": "^2.0.0-beta.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
