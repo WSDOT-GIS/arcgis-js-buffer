@@ -4,6 +4,11 @@
   "description": "Connects @wsdot/arcgis-buffer-ui to an ArcGIS API (v4) map ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "keywords": [
+    "arcgis",
+    "buffer",
+    "ui"
+  ],
   "files": [
     "dist/*"
   ],
