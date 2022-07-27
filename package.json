@@ -2,10 +2,10 @@
   "private": true,
   "workspaces": [
     "packages/arcgis-buffer-ui",
-	"packages/connector-v3",
-	"packages/connector-v4",
-	"packages/demo-v3",
-	"packages/demo-v4"
+    "packages/connector-v3",
+    "packages/connector-v4",
+    "packages/demo-v3",
+    "packages/demo-v4"
   ],
   "description": "This repository contains code for `@wsdot/arcgis-buffer-ui` and related packages.",
   "repository": {
