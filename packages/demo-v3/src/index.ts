@@ -1,7 +1,7 @@
 import { BufferUI } from "@wsdot/arcgis-buffer-ui";
 import { attachBufferUIToMap } from "@wsdot/arcgis-buffer-ui-connector-v3";
-import arcgisUtils = require("esri/arcgis/utils");
-import esriConfig = require("esri/config");
+import arcgisUtils from "esri/arcgis/utils";
+import esriConfig from "esri/config";
 
 // Specify CORS enabled servers and HTTPs supporting domains.
 [

@@ -3,15 +3,15 @@
  */
 
 import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
-import Popup = require("esri/widgets/Popup");
-import PopupTemplate = require("esri/PopupTemplate");
-import Geometry = require("esri/geometry/Geometry");
-import geometryEngineAsync = require("esri/geometry/geometryEngineAsync");
-import geometryJsonUtils = require("esri/geometry/support/jsonUtils");
-import Polygon = require("esri/geometry/Polygon");
-import Graphic = require("esri/Graphic");
-import FeatureLayer = require("esri/layers/FeatureLayer");
-import View = require("esri/views/View");
+import Popup from "esri/widgets/Popup";
+import PopupTemplate from "esri/PopupTemplate";
+import Geometry from "esri/geometry/Geometry";
+import geometryEngineAsync from "esri/geometry/geometryEngineAsync";
+import geometryJsonUtils from "esri/geometry/support/jsonUtils";
+import Polygon from "esri/geometry/Polygon";
+import Graphic from "esri/Graphic";
+import FeatureLayer from "esri/layers/FeatureLayer";
+import View from "esri/views/View";
 
 // /**
 //  * Adds a "buffer" link to an InfoWindow's ".actionList" section.
@@ -50,6 +50,7 @@ export function attachBufferUIToMap(
     title: "Buffer",
     actions: [
       {
+        type: "button",
         title: "Buffer current geometry",
         id: "buffer",
         className: "action-buffer"
@@ -88,34 +89,34 @@ export function attachBufferUIToMap(
   });
 
   const bufferFeatureLayer = new FeatureLayer({
-    geometryType: "esriGeometryPolygon",
+    geometryType: "polygon",
     fields: [
       {
         name: "oid",
-        type: "esriFieldTypeOID"
+        type: "oid"
       },
       {
         name: "distance",
-        type: "esriFieldTypeDouble"
+        type: "double"
       },
       {
         name: "unit",
-        type: "esriFieldTypeString",
+        type: "string",
         alias: "Measurement Unit"
       },
       {
         name: "unioned",
-        type: "esriFieldTypeSmallInteger",
+        type: "integer",
         alias: "Is Unioned"
       },
       {
         name: "area",
-        type: "esriFieldTypeDouble",
+        type: "double",
         alias: "Area"
       },
       {
         name: "areaUnit",
-        type: "esriFieldTypeString",
+        type: "string",
         alias: "Area Unit"
       }
     ]
@@ -130,21 +131,10 @@ export function attachBufferUIToMap(
 
   buffer.form.addEventListener("clear-graphics", async () => {
     const features = await bufferFeatureLayer.queryFeatures();
-    const editResults: IEditResults = await bufferFeatureLayer.applyEdits({
+    await bufferFeatureLayer.applyEdits({
       deleteFeatures: features.features
     });
   });
-
-  interface IHasObjectId {
-    objectId: number;
-    [key: string]: any;
-  }
-
-  interface IEditResults {
-    addFeatures: Graphic[];
-    updateFeatures: Graphic[];
-    deleteFeatures: Graphic[] | IHasObjectId[];
-  }
 
   buffer.form.addEventListener("buffer", (e: any) => {
     const { detail } = e;

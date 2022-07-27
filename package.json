@@ -1,7 +1,17 @@
 {
-	"private" :true,
-	"devDependencies": {
-		"lerna": "^2.11.0"
-	},
-	"workspaces": ["packages/*"]
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "description": "This repository contains code for `@wsdot/arcgis-buffer-ui` and related packages.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WSDOT-GIS/arcgis-js-buffer.git"
+  },
+  "author": "Jeff Jacobson",
+  "license": "Unlicense",
+  "bugs": {
+    "url": "https://github.com/WSDOT-GIS/arcgis-js-buffer/issues"
+  },
+  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme"
 }

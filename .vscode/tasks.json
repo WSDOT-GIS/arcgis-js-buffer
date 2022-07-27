@@ -1,0 +1,53 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "typescript",
+			"isBackground": true,
+			"tsconfig": "./packages/connector-v4/tsconfig.json",
+			"option": "watch",
+			"problemMatcher": [
+				"$tsc-watch"
+			],
+			"group": "build",
+			"label": "tsc: watch - connector-v4"
+		},
+		{
+			"label": "webpack watch - demo-v4",
+			"isBackground": true,
+			"group": "build",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"webpack",
+				"-w"
+			],
+			"options": {
+				"cwd": "./packages/demo-v4"
+			}
+		},
+		{
+			"label": "watch demo v4",
+			"dependsOn": ["tsc: watch - connector-v4", "webpack watch - demo-v4"]
+		},
+		{
+			"label": "dotnet serve demo-v4",
+			"type": "shell",
+			"isBackground": true,
+			"command": "dotnet",
+			"args": [
+				"serve",
+				"--directory ./packages/demo-v4",
+				"-oS",
+				"--port 8080"
+			]
+		},
+		{
+			"label": "serve demo-v4",
+			"dependsOn": [
+				"watch demo v4",
+				"dotnet serve demo-v4"
+			],
+		}
+	]
+}

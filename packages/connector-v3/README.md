@@ -19,8 +19,8 @@ Example
 ```typescript
 import { BufferUI } from "@wsdot/arcgis-buffer-ui";
 import { attachBufferUIToMap } from "@wsdot/arcgis-buffer-ui-connector-v3";
-import arcgisUtils = require("esri/arcgis/utils");
-import esriConfig = require("esri/config");
+import arcgisUtils from "esri/arcgis/utils";
+import esriConfig from "esri/config";
 
 // Create the Buffer UI in the specified node.
 const bufferElement = document.getElementById("buffer")!;
