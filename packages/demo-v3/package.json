@@ -12,7 +12,7 @@
   "license": "Unlicense",
   "devDependencies": {
     "@types/arcgis-js-api": "^3.24 < 4",
-    "lerna": "^2.11.0",
+    "lerna": "^6.5.1",
     "prettier": "^1.12.1",
     "source-map": "^0.7.2",
     "ts-loader": "^4.3.0",
