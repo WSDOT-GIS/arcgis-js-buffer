@@ -1,5 +1,9 @@
 {
     "conventionalCommits.scopes": [
-        "demo-v3"
+        "arcgis-buffer-ui",
+        "connector-v3",
+        "connector-v4",
+        "demo-v3",
+        "demo-v4"
     ]
 }

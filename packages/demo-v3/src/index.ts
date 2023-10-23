@@ -4,6 +4,7 @@ import esriConfig from "esri/config";
 import PopupTemplate from "esri/dijit/PopupTemplate";
 import FeatureLayer from "esri/layers/FeatureLayer";
 import EsriMap from "esri/map";
+import Extent from "esri/geometry/Extent";
 
 // Specify CORS enabled servers and HTTPs supporting domains.
 [
@@ -24,14 +25,23 @@ esriConfig.defaults.io.corsDetection = false;
 const bufferElement = document.getElementById("buffer")!;
 const buffer = new BufferUI(bufferElement);
 
-const milepostLayer = new FeatureLayer("https://data.wsdot.wa.gov/arcgis/rest/services/Shared/InterchangeDrawings/FeatureServer/0", {
-  infoTemplate: new PopupTemplate({
-    title: "feature"
-  })
-});
+const milepostLayer = new FeatureLayer(
+  "https://data.wsdot.wa.gov/arcgis/rest/services/Shared/InterchangeDrawings/FeatureServer/0",
+  {
+    infoTemplate: new PopupTemplate({
+      title: "feature",
+    }),
+  }
+);
 
 const map = new EsriMap("map", {
   basemap: "streets-vector",
+  extent: new Extent({
+    xmin: -124.79,
+    ymin: 45.54,
+    xmax: -116.91,
+    ymax: 49.05,
+  }),
 });
 
 map.addLayer(milepostLayer);
