@@ -28,7 +28,10 @@
 		},
 		{
 			"label": "watch demo v4",
-			"dependsOn": ["tsc: watch - connector-v4", "webpack watch - demo-v4"]
+			"dependsOn": [
+				"tsc: watch - connector-v4",
+				"webpack watch - demo-v4"
+			]
 		},
 		{
 			"label": "dotnet serve demo-v4",
@@ -47,7 +50,17 @@
 			"dependsOn": [
 				"watch demo v4",
 				"dotnet serve demo-v4"
+			]
+		},
+		{
+			"type": "npm",
+			"script": "prepare",
+			"path": "packages/demo-v3",
+			"problemMatcher": [
+				"$ts-webpack"
 			],
+			"label": "npm: prepare - packages/demo-v3",
+			"detail": "webpack"
 		}
 	]
 }
