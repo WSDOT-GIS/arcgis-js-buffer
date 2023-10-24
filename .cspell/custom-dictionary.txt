@@ -1,0 +1,5 @@
+# Custom Dictionary Words
+AGOL
+dijit
+unioned
+wkid

@@ -1,6 +1,9 @@
 {
-    "files.exclude": {
-        "**/node_modules": true,
-        "packages/*/dist": true
-    }
+    "conventionalCommits.scopes": [
+        "arcgis-buffer-ui",
+        "connector-v3",
+        "connector-v4",
+        "demo-v3",
+        "demo-v4"
+    ]
 }

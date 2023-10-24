@@ -1,15 +1,18 @@
 import { BufferUI } from "@wsdot/arcgis-buffer-ui";
 import { attachBufferUIToMap } from "@wsdot/arcgis-buffer-ui-connector-v3";
-import arcgisUtils = require("esri/arcgis/utils");
-import esriConfig = require("esri/config");
+import esriConfig from "esri/config";
+import PopupTemplate from "esri/dijit/PopupTemplate";
+import FeatureLayer from "esri/layers/FeatureLayer";
+import EsriMap from "esri/map";
+import Extent from "esri/geometry/Extent";
 
 // Specify CORS enabled servers and HTTPs supporting domains.
 [
   "www.wsdot.wa.gov",
   "wsdot.wa.gov",
   "data.wsdot.wa.gov",
-  "gispublic.dfw.wa.gov"
-].forEach(svr => {
+  "gispublic.dfw.wa.gov",
+].forEach((svr) => {
   esriConfig.defaults.io.corsEnabledServers.push(svr);
   esriConfig.defaults.io.httpsDomains.push(svr);
 });
@@ -22,21 +25,26 @@ esriConfig.defaults.io.corsDetection = false;
 const bufferElement = document.getElementById("buffer")!;
 const buffer = new BufferUI(bufferElement);
 
-// Create a map from a predefined webmap on AGOL.
-arcgisUtils
-  .createMap("927b5daaa7f4434db4b312364489544d", "map")
-  .then((response: any) => {
-    const map = response.map;
+const milepostLayer = new FeatureLayer(
+  "https://data.wsdot.wa.gov/arcgis/rest/services/Shared/InterchangeDrawings/FeatureServer/0",
+  {
+    infoTemplate: new PopupTemplate({
+      title: "feature",
+    }),
+  }
+);
 
-    // Setup the Buffer UI with the map.
-    attachBufferUIToMap(map, buffer);
+const map = new EsriMap("map", {
+  basemap: "streets-vector",
+  extent: new Extent({
+    xmin: -124.79,
+    ymin: 45.54,
+    xmax: -116.91,
+    ymax: 49.05,
+  }),
+});
 
-    // Turn on some layers that are off by default.
-    const airportRe = /^((Airport)|(CityLimits))/i;
-    for (const layerId of map.layerIds) {
-      if (airportRe.test(layerId)) {
-        const layer = map.getLayer(layerId);
-        layer.show();
-      }
-    }
-  });
+map.addLayer(milepostLayer);
+
+// Setup the Buffer UI with the map.
+attachBufferUIToMap(map, buffer);

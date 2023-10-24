@@ -2,15 +2,15 @@
  * This module is used to make the BufferUI interact with an ArcGIS API for JavaScript v3 map.
  */
 
-import Popup = require("esri/dijit/Popup");
-import PopupTemplate = require("esri/dijit/PopupTemplate");
-import Geometry = require("esri/geometry/Geometry");
-import geometryEngineAsync = require("esri/geometry/geometryEngineAsync");
-import geometryJsonUtils = require("esri/geometry/jsonUtils");
-import Polygon = require("esri/geometry/Polygon");
-import Graphic = require("esri/graphic");
-import FeatureLayer = require("esri/layers/FeatureLayer");
-import EsriMap = require("esri/map");
+import Popup from "esri/dijit/Popup";
+import PopupTemplate from "esri/dijit/PopupTemplate";
+import Geometry from "esri/geometry/Geometry";
+import geometryEngineAsync from "esri/geometry/geometryEngineAsync";
+import geometryJsonUtils from "esri/geometry/jsonUtils";
+import Polygon from "esri/geometry/Polygon";
+import Graphic from "esri/graphic";
+import FeatureLayer from "esri/layers/FeatureLayer";
+import EsriMap from "esri/map";
 import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
 
 /**
