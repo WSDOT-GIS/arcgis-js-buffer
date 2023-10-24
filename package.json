@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/WSDOT-GIS/arcgis-js-buffer/issues"
   },
-  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme"
+  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme",
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
 }
