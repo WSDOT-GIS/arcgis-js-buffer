@@ -61,6 +61,16 @@
 			],
 			"label": "npm: prepare - packages/demo-v3",
 			"detail": "webpack"
+		},
+		{
+			"type": "npm",
+			"script": "lint",
+			"problemMatcher": [
+				"$eslint-compact",
+				"$eslint-stylish"
+			],
+			"label": "npm: lint",
+			"detail": "eslint **/*.ts"
 		}
 	]
 }

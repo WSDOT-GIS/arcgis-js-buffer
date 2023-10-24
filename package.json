@@ -7,6 +7,9 @@
     "packages/demo-v3",
     "packages/demo-v4"
   ],
+  "scripts": {
+    "lint": "eslint **/*.ts"
+  },
   "description": "This repository contains code for `@wsdot/arcgis-buffer-ui` and related packages.",
   "repository": {
     "type": "git",
