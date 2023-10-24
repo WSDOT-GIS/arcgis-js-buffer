@@ -15,11 +15,11 @@
   },
   "devDependencies": {
     "@types/arcgis-js-api": "<4",
-    "prettier": "^2.7.1",
+    "prettier": "^3.0.3",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.3.0",
-    "typescript": "^4.7.4"
+    "typescript": "^5.2.2"
   },
   "publishConfig": {
     "access": "public"
