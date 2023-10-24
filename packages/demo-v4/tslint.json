@@ -1,5 +1,0 @@
-{
-    "extends": [
-        "../arcgis-buffer-ui/tslint.json"
-    ]
-}
