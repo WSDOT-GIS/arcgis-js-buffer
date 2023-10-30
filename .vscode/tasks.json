@@ -71,6 +71,16 @@
 			],
 			"label": "npm: lint",
 			"detail": "eslint **/*.ts"
+		},
+		{
+			"type": "typescript",
+			"tsconfig": "packages/connector-v3/tsconfig.json",
+			"option": "watch",
+			"problemMatcher": [
+				"$tsc-watch"
+			],
+			"group": "build",
+			"label": "tsc: watch - packages/connector-v3/tsconfig.json"
 		}
 	]
 }
