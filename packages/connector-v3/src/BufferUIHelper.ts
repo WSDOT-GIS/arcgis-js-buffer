@@ -2,50 +2,16 @@
  * This module is used to make the BufferUI interact with an ArcGIS API for JavaScript v3 map.
  */
 
+import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
 import Popup from "esri/dijit/Popup";
-import PopupTemplate from "esri/dijit/PopupTemplate";
 import Geometry from "esri/geometry/Geometry";
+import Polygon from "esri/geometry/Polygon";
 import geometryEngineAsync from "esri/geometry/geometryEngineAsync";
 import geometryJsonUtils from "esri/geometry/jsonUtils";
-import Polygon from "esri/geometry/Polygon";
 import Graphic from "esri/graphic";
 import FeatureLayer from "esri/layers/FeatureLayer";
 import EsriMap from "esri/map";
-import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
-
-/**
- * Adds a "buffer" link to an InfoWindow's ".actionList" section.
- * When clicked it will add the selected feature
- * to the BufferUI geometries list.
- * @param infoWindow - A Popup
- * @param bufferUI - A BufferUI object.
- */
-export function addBufferLink(infoWindow: Popup, bufferUI: BufferUI) {
-  const actionList = (infoWindow.domNode as Element).querySelector(".actionList");
-  if (!actionList) {
-    throw new Error("Info window does not have an element of class actionList.");
-  }
-  const link = document.createElement("a");
-  const docFrag = document.createDocumentFragment();
-  link.textContent = "Buffer";
-  link.href = "#";
-  link.title = "Add selected geometry to Buffer UI list";
-  link.classList.add("action");
-  link.classList.add("buffer");
-  // Add a space before adding link.
-  docFrag.appendChild(document.createTextNode(" "));
-  docFrag.appendChild(link);
-
-  link.onclick = () => {
-    const feature = infoWindow.features[infoWindow.selectedIndex];
-    bufferUI.addFeature(feature);
-
-    return false;
-  };
-
-  actionList.appendChild(docFrag);
-  return link;
-}
+import { createPopupTemplate, createBufferLayer, addBufferLink } from "./layerSetup";
 
 /**
  * Creates a feature layer and adds it to the map.
@@ -61,84 +27,9 @@ export function attachBufferUIToMap(
 ): FeatureLayer {
   let oid = 0;
 
-  const popupTemplate = new PopupTemplate({
-    title: "Buffer",
-    fieldInfos: [
-      {
-        fieldName: "distance",
-        label: "Buffer Distance",
-        visible: true,
-        format: {
-          places: 0,
-          digitSeparator: true
-        }
-      },
-      {
-        fieldName: "unit",
-        label: "Measurement Unit",
-        visible: true
-      },
-      {
-        fieldName: "area",
-        label: "Area",
-        visible: true,
-        format: {
-          places: 0,
-          digitSeparator: true
-        }
-      },
-      {
-        fieldName: "areaUnit",
-        label: "Area Unit",
-        visible: true
-      }
-    ]
-  });
+  const popupTemplate = createPopupTemplate();
 
-  const bufferFeatureLayer = new FeatureLayer(
-    {
-      featureSet: null,
-      layerDefinition: {
-        geometryType: "esriGeometryPolygon",
-        fields: [
-          {
-            name: "oid",
-            type: "esriFieldTypeOID"
-          },
-          {
-            name: "distance",
-            type: "esriFieldTypeDouble"
-          },
-          {
-            name: "unit",
-            type: "esriFieldTypeString",
-            alias: "Measurement Unit"
-          },
-          {
-            name: "unioned",
-            type: "esriFieldTypeSmallInteger",
-            alias: "Is Unioned"
-          },
-          {
-            name: "area",
-            type: "esriFieldTypeDouble",
-            alias: "Area"
-          },
-          {
-            name: "areaUnit",
-            type: "esriFieldTypeString",
-            alias: "Area Unit"
-          }
-        ]
-      }
-    },
-    {
-      id: layerId,
-      className: "buffer"
-    }
-  );
-
-  bufferFeatureLayer.setInfoTemplate(popupTemplate);
+  const bufferFeatureLayer = createBufferLayer(layerId, popupTemplate);
 
   map.addLayer(bufferFeatureLayer);
 
@@ -257,3 +148,5 @@ export function attachBufferUIToMap(
 
   return bufferFeatureLayer;
 }
+
+
