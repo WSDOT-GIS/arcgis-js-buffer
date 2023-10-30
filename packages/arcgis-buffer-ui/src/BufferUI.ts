@@ -19,6 +19,44 @@ export interface IMayHaveToJson {
 }
 
 /**
+ * Tests to see if the input object is a Geometry
+ * @param featureOrGeometry - The object to be tested.
+ * @returns - Returns true if input object has expected properties
+ */
+function isGeometry(
+  featureOrGeometry: Geometry | Graphic
+): featureOrGeometry is Geometry {
+  return ["x", "points", "rings", "paths"].some((propName) =>
+    Object.hasOwn(featureOrGeometry, propName)
+  );
+}
+
+/**
+ * Tests to see if {@link geometry} has a function called "toJson".
+ * @param geometry
+ * @returns
+ */
+const hasToJson = (geometry: unknown): geometry is Required<IMayHaveToJson> => {
+  return (
+    geometry !== null &&
+    typeof geometry === "object" &&
+    typeof (geometry as IMayHaveToJson).toJson === "function"
+  );
+};
+
+function createDL(feature: Graphic) {
+  const dl = document.createElement("dl");
+  for (const [key, value] of Object.entries(feature.attributes)) {
+    const dt = document.createElement("dt");
+    dt.textContent = key;
+    const dd = document.createElement("dd");
+    dd.textContent = value == null ? "" : value.toString();
+    dl.append(dt, dd);
+  }
+  return dl;
+}
+
+/**
  * The distance input can have either a single number or a comma separated
  * list of numbers. This Regex will match valid values for that control.
  */
@@ -80,11 +118,7 @@ function getFormFromTemplate(
 function getGeometry(featureOrGeometry: Graphic | Geometry) {
   if ((featureOrGeometry as Graphic).geometry) {
     return (featureOrGeometry as Graphic).geometry;
-  } else if (
-    ["x", "points", "rings", "paths"].some((propName) =>
-      Object.hasOwn(featureOrGeometry, propName)
-    )
-  ) {
+  } else if (isGeometry(featureOrGeometry)) {
     return featureOrGeometry as Geometry;
   }
   throw new TypeError("Input must be a Graphic or Geometry");
@@ -138,7 +172,7 @@ export default class BufferUI {
     this.form = form;
 
     form.onsubmit = () => {
-      const {geometries} = this;
+      const { geometries } = this;
       if (geometries) {
         const evt = new CustomEvent<IBufferEventDetail>("buffer", {
           detail: {
@@ -198,21 +232,18 @@ export default class BufferUI {
     const list = this.root.querySelector(".geometry-list")!;
     const li = document.createElement("li");
 
-    let geometry = getGeometry(feature) as Geometry & IMayHaveToJson;
-    if (geometry.toJson) {
+    // let geometry = getGeometry(feature) as Geometry & IMayHaveToJson;
+    // if (geometry.toJson) {
+    //   geometry = geometry.toJson();
+    // }
+    let geometry = getGeometry(feature);
+    if (hasToJson(geometry)) {
       geometry = geometry.toJson();
     }
     li.dataset.geometry = JSON.stringify(geometry);
     // TODO: If input is a feature, make the list item's text content more descriptive of the feature using its properties.
     if (feature.attributes) {
-      const dl = document.createElement("dl");
-      for (const [key, value] of Object.entries(feature.attributes)) {
-        const dt = document.createElement("dt");
-        dt.textContent = key;
-        const dd = document.createElement("dd");
-        dd.textContent = value == null ? "" : value.toString();
-        dl.append(dt, dd);
-      }
+      const dl = createDL(feature);
       li.append(dl);
     } else {
       li.textContent = "Geometry";
