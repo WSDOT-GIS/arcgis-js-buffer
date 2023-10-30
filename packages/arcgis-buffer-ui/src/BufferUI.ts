@@ -3,7 +3,7 @@
  */
 
 import { Feature as Graphic, Geometry } from "arcgis-rest-api";
-import { createUnitSelectContents, getUnitForId } from "./units";
+import { createUnitSelectContents } from "./units";
 
 /**
  * This interface is for objects that may or may not have a toJson function.
@@ -15,7 +15,7 @@ export interface IMayHaveToJson {
   /**
    * ArcGIS API object will have a toJson function that converts it to a standard JavaScript object.
    */
-  toJson?: () => any;
+  toJson?: () => never;
 }
 
 /**
@@ -30,9 +30,7 @@ const distancesPattern = /\d+(?:\.\d+)?([,\s]+\d+(?:\.\d+)?)*/;
 const template = `<form class="buffer-ui">
 <div>
 	<label>Distances</label>
-  <input name="distances" placeholder="e.g 200,300" pattern="${
-    distancesPattern.source
-  }" title="Must be a number or list of numbers." required="required" />
+  <input name="distances" placeholder="e.g 200,300" pattern="${distancesPattern.source}" title="Must be a number or list of numbers." required="required" />
 </div>
 <div>
 	<label>Measurement Unit</label>
@@ -63,7 +61,9 @@ const template = `<form class="buffer-ui">
  * @param {string} templateMarkup - HTML markup string.
  * @returns {HTMLFormElement}
  */
-function getFormFromTemplate(templateMarkup: string = template): HTMLFormElement {
+function getFormFromTemplate(
+  templateMarkup: string = template
+): HTMLFormElement {
   const form = document.createElement("form");
   form.innerHTML = templateMarkup;
   const unitSelect = form.unit as HTMLSelectElement;
@@ -81,10 +81,9 @@ function getGeometry(featureOrGeometry: Graphic | Geometry) {
   if ((featureOrGeometry as Graphic).geometry) {
     return (featureOrGeometry as Graphic).geometry;
   } else if (
-    featureOrGeometry.hasOwnProperty("x") ||
-    featureOrGeometry.hasOwnProperty("points") ||
-    featureOrGeometry.hasOwnProperty("rings") ||
-    featureOrGeometry.hasOwnProperty("paths")
+    ["x", "points", "rings", "paths"].some((propName) =>
+      Object.hasOwn(featureOrGeometry, propName)
+    )
   ) {
     return featureOrGeometry as Geometry;
   }
@@ -133,22 +132,21 @@ export default class BufferUI {
    * @param root The HTML element that will contain the HTML form of this control.
    */
   constructor(public root: HTMLElement) {
-    const self = this;
     const form = getFormFromTemplate(template);
 
     this.root.appendChild(form);
     this.form = form;
 
     form.onsubmit = () => {
-      const geometries = { self };
+      const {geometries} = this;
       if (geometries) {
         const evt = new CustomEvent<IBufferEventDetail>("buffer", {
           detail: {
-            geometry: self.geometries,
-            distance: self.distances,
-            unit: self.unit,
-            unionResults: self.unionResults
-          }
+            geometry: this.geometries,
+            distance: this.distances,
+            unit: this.unit,
+            unionResults: this.unionResults,
+          },
         });
         form.dispatchEvent(evt);
       }
@@ -159,7 +157,7 @@ export default class BufferUI {
       "button.clear-geometries"
     )!;
     clearGeometriesButton.onclick = () => {
-      self.clearGeometryList();
+      this.clearGeometryList();
     };
 
     const clearGraphicsButton = this.root.querySelector<HTMLButtonElement>(
@@ -182,7 +180,7 @@ export default class BufferUI {
     let distances = null;
     const s: string = this.form.distances.value;
     if (s) {
-      distances = s.split(/[,\s]+/).map(st => {
+      distances = s.split(/[,\s]+/).map((st) => {
         return parseFloat(st);
       });
     }
@@ -206,7 +204,19 @@ export default class BufferUI {
     }
     li.dataset.geometry = JSON.stringify(geometry);
     // TODO: If input is a feature, make the list item's text content more descriptive of the feature using its properties.
-    li.textContent = "Geometry";
+    if (feature.attributes) {
+      const dl = document.createElement("dl");
+      for (const [key, value] of Object.entries(feature.attributes)) {
+        const dt = document.createElement("dt");
+        dt.textContent = key;
+        const dd = document.createElement("dd");
+        dd.textContent = value == null ? "" : value.toString();
+        dl.append(dt, dd);
+      }
+      li.append(dl);
+    } else {
+      li.textContent = "Geometry";
+    }
     list.appendChild(li);
   }
 
