@@ -2,7 +2,11 @@
  * This module is used to make the BufferUI interact with an ArcGIS API for JavaScript v3 map.
  */
 
-import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
+import {
+  BufferUI,
+  getUnitForId,
+  type IBufferEventDetail,
+} from "@wsdot/arcgis-buffer-ui";
 import Popup from "esri/dijit/Popup";
 import Geometry from "esri/geometry/Geometry";
 import Polygon from "esri/geometry/Polygon";
@@ -11,7 +15,11 @@ import geometryJsonUtils from "esri/geometry/jsonUtils";
 import Graphic from "esri/graphic";
 import FeatureLayer from "esri/layers/FeatureLayer";
 import EsriMap from "esri/map";
-import { createPopupTemplate, createBufferLayer, addBufferLink } from "./layerSetup";
+import {
+  addBufferLink,
+  createBufferLayer,
+  createPopupTemplate,
+} from "./layerSetup";
 
 /**
  * Creates a feature layer and adds it to the map.
@@ -39,8 +47,14 @@ export function attachBufferUIToMap(
     bufferFeatureLayer.clear();
   });
 
-  buffer.form.addEventListener("buffer", (e: any) => {
-    const { detail } = e;
+  buffer.form.addEventListener("buffer", (e: Event) => {
+    const { detail } = e as CustomEvent<IBufferEventDetail>;
+
+    if (detail.geometry === null) {
+      throw new TypeError(
+        'Expected "buffer" event to have non-null "detail" property'
+      );
+    }
 
     // Convert regular objects into esri/Geometry objects.
     if (Array.isArray(detail.geometry)) {
@@ -52,10 +66,19 @@ export function attachBufferUIToMap(
       detail.geometry = geometryJsonUtils.fromJson(detail.geometry);
     }
 
+    if (detail.distance === null) {
+      throw new TypeError("Expected detail.distance to be non-null.");
+    }
+
     // The geometry engine requires that the number of geometries and distances be the same.
     // If multiple distances are provided but only a single geometry, that geometry will be
     // buffered for each distance.
     if (Array.isArray(detail.distance) && !Array.isArray(detail.geometry)) {
+      if (!(detail.geometry instanceof Geometry)) {
+        throw new TypeError(
+          "detail.geometry should be an ArcGIS API Geometry object by this point"
+        );
+      }
       detail.geometry = (() => {
         const outGeoArray = new Array<Geometry>(detail.distance.length);
         for (let i = 0, l = detail.distance.length; i < l; i += 1) {
@@ -78,7 +101,7 @@ export function attachBufferUIToMap(
 
     geometryEngineAsync
       .buffer(
-        detail.geometry,
+        detail.geometry as Geometry[] | Geometry,
         detail.distance,
         detail.unit,
         detail.unionResults
@@ -88,7 +111,7 @@ export function attachBufferUIToMap(
           console.log("buffer results", bufferResults);
           const unit = getUnitForId(detail.unit);
           // unit = unit.description;
-          const promises = new Array<Promise<any>>();
+          const promises = new Array<Promise<number>>();
           if (bufferResults) {
             bufferFeatureLayer.suspend();
             if (!Array.isArray(bufferResults)) {
@@ -96,7 +119,11 @@ export function attachBufferUIToMap(
             }
             bufferResults.forEach((geometry: Geometry, i: number) => {
               const promise = geometryEngineAsync
-                .planarArea(geometry, undefined as any)
+                .planarArea(geometry, 
+                  // typing incorrectly disallows the unit parameter to be undefined.
+                  // cast to unknown -> number | string to avoid TypeScript error.
+                  undefined as unknown as number | string
+                  )
                 .then(
                   (area: number) => {
                     console.debug("area", area);
@@ -109,7 +136,7 @@ export function attachBufferUIToMap(
                       unit: unit.description,
                       unioned: detail.unionResults,
                       area: acres < 1 ? acres * 43560 : acres,
-                      areaUnit: acres < 1 ? "ft\u00b2" : "ac" // ft. squared or acres
+                      areaUnit: acres < 1 ? "ft\u00b2" : "ac", // ft. squared or acres
                     });
                     bufferFeatureLayer.applyEdits([graphic]);
                   },
@@ -122,7 +149,7 @@ export function attachBufferUIToMap(
                         : detail.distance,
                       unit: unit.description,
                       unioned: detail.unionResults,
-                      areaError: error
+                      areaError: error,
                     });
                     bufferFeatureLayer.applyEdits([graphic]);
                   }
@@ -148,5 +175,3 @@ export function attachBufferUIToMap(
 
   return bufferFeatureLayer;
 }
-
-
