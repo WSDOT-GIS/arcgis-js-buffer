@@ -76,11 +76,68 @@
 			"type": "typescript",
 			"tsconfig": "packages/connector-v3/tsconfig.json",
 			"option": "watch",
+			"presentation": {
+				"group": "v3"
+			},
 			"problemMatcher": [
 				"$tsc-watch"
 			],
 			"group": "build",
-			"label": "tsc: watch - packages/connector-v3/tsconfig.json"
+			"label": "tsc: watch - connector-v3"
+		},
+		{
+			"label": "webpack watch - demo-v3",
+			"icon": {
+				"id": "browser",
+				"color": "terminal.ansiMagenta"
+			},
+			"isBackground": true,
+			"presentation": {
+				"group": "v3"
+			},
+			"group": "build",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"webpack",
+				"-w"
+			],
+			"options": {
+				"cwd": "./packages/demo-v3"
+			}
+		},
+		{
+			"label": "dotnet serve demo-v3",
+			"type": "shell",
+			"isBackground": true,
+			"command": "dotnet",
+			"presentation": {
+				"group": "v3"
+			},
+			"args": [
+				"serve",
+				"--directory ./packages/demo-v3",
+				"-oS",
+				"--port 8080"
+			]
+		},
+		{
+			"label": "watch demo v3",
+			"icon": {
+				"id": "eye-watch",
+				"color": "terminal.ansiGreen"
+			},
+			"dependsOn": [
+				"tsc: watch - connector-v3",
+				"webpack watch - demo-v3",
+				"dotnet serve demo-v3"
+			],
+			"presentation": {
+				"group": "v3",
+			},
+			"problemMatcher": [
+				"$ts-webpack"
+			]
 		}
 	]
 }
