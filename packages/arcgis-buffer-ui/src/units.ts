@@ -1,5 +1,5 @@
 /**
- * Module for working with measurment units.
+ * Module for working with measurement units.
  */
 
 /**
@@ -120,7 +120,7 @@ export function unitToOption(unit: IUnit) {
 
 /**
  * Creates the contents of a unit <select>.
- * @param {string} [defaultName] - The name of the measurment unit that will be set as the default.
+ * @param {string} [defaultName] - The name of the measurement unit that will be set as the default.
  * @returns {DocumentFragment} - Document fragment containing options and optgroups to be added to a select element.
  */
 export function createUnitSelectContents(
