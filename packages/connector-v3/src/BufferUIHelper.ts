@@ -9,17 +9,21 @@ import {
 } from "@wsdot/arcgis-buffer-ui";
 import Popup from "esri/dijit/Popup";
 import Geometry from "esri/geometry/Geometry";
+import * as projection from "esri/geometry/projection";
 import Polygon from "esri/geometry/Polygon";
 import geometryEngineAsync from "esri/geometry/geometryEngineAsync";
 import geometryJsonUtils from "esri/geometry/jsonUtils";
 import Graphic from "esri/graphic";
 import FeatureLayer from "esri/layers/FeatureLayer";
 import EsriMap from "esri/map";
+import SpatialReference from "esri/SpatialReference";
 import {
   addBufferLink,
   createBufferLayer,
   createPopupTemplate,
 } from "./layerSetup";
+
+projection.load().then(() => console.debug("projection engine loaded"))
 
 /**
  * Creates a feature layer and adds it to the map.
@@ -31,7 +35,8 @@ import {
 export function attachBufferUIToMap(
   map: EsriMap,
   buffer: BufferUI,
-  layerId: string = "Buffer"
+  layerId: string = "Buffer",
+  spatialReference: SpatialReference = new SpatialReference({wkid: 2927})
 ): FeatureLayer {
   let oid = 0;
 
@@ -69,6 +74,8 @@ export function attachBufferUIToMap(
     if (detail.distance === null) {
       throw new TypeError("Expected detail.distance to be non-null.");
     }
+
+    detail.geometry = projection.project(detail.geometry as Geometry | Geometry[], spatialReference)
 
     // The geometry engine requires that the number of geometries and distances be the same.
     // If multiple distances are provided but only a single geometry, that geometry will be
@@ -118,6 +125,7 @@ export function attachBufferUIToMap(
               bufferResults = [bufferResults];
             }
             bufferResults.forEach((geometry: Geometry, i: number) => {
+              const mapGeometry = projection.project(geometry, map.spatialReference);
               const promise = geometryEngineAsync
                 .planarArea(geometry, 
                   // typing incorrectly disallows the unit parameter to be undefined.
@@ -128,7 +136,7 @@ export function attachBufferUIToMap(
                   (area: number) => {
                     console.debug("area", area);
                     const acres = area / 4047;
-                    const graphic = new Graphic(geometry, undefined, {
+                    const graphic = new Graphic(mapGeometry as Geometry, undefined, {
                       oid: oid++,
                       distance: Array.isArray(detail.distance)
                         ? detail.distance[i]
@@ -142,7 +150,7 @@ export function attachBufferUIToMap(
                   },
                   (error: Error) => {
                     console.error("area", error);
-                    const graphic = new Graphic(geometry, undefined, {
+                    const graphic = new Graphic(mapGeometry as Geometry, undefined, {
                       oid: oid++,
                       distance: Array.isArray(detail.distance)
                         ? detail.distance[i]
