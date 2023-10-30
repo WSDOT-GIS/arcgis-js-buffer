@@ -63,9 +63,9 @@ const template = `<form class="buffer-ui">
  * @param {string} templateMarkup - HTML markup string.
  * @returns {HTMLFormElement}
  */
-function getFormFromTemplate(templateMarkup: string): HTMLFormElement {
+function getFormFromTemplate(templateMarkup: string = template): HTMLFormElement {
   const form = document.createElement("form");
-  form.innerHTML = template;
+  form.innerHTML = templateMarkup;
   const unitSelect = form.unit as HTMLSelectElement;
   unitSelect.appendChild(createUnitSelectContents("Foot"));
   return form;
