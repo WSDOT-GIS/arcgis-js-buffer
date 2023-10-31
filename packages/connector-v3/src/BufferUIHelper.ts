@@ -23,7 +23,12 @@ import {
   createPopupTemplate,
 } from "./layerSetup";
 
-projection.load().then(() => console.debug("projection engine loaded"))
+projection.load().then(() => console.debug("projection engine loaded"));
+
+/**
+ * Object ID for features. Will be incremented as features are added.
+ */
+let oid = 0;
 
 /**
  * Creates a feature layer and adds it to the map.
@@ -36,10 +41,8 @@ export function attachBufferUIToMap(
   map: EsriMap,
   buffer: BufferUI,
   layerId: string = "Buffer",
-  spatialReference: SpatialReference = new SpatialReference({wkid: 2927})
+  spatialReference: SpatialReference = new SpatialReference({ wkid: 2927 })
 ): FeatureLayer {
-  let oid = 0;
-
   const popupTemplate = createPopupTemplate();
 
   const bufferFeatureLayer = createBufferLayer(layerId, popupTemplate);
@@ -52,7 +55,7 @@ export function attachBufferUIToMap(
     bufferFeatureLayer.clear();
   });
 
-  buffer.form.addEventListener("buffer", (e: Event) => {
+  const bufferEventListener = (e: Event) => {
     const { detail } = e as CustomEvent<IBufferEventDetail>;
 
     if (detail.geometry === null) {
@@ -61,110 +64,95 @@ export function attachBufferUIToMap(
       );
     }
 
+    let geometry: Geometry | Geometry[];
+    let distance: number[] | number;
+
     // Convert regular objects into esri/Geometry objects.
     if (Array.isArray(detail.geometry)) {
-      detail.geometry = detail.geometry.map(
+      geometry = detail.geometry.map(
         geometryJsonUtils.fromJson,
         detail.geometry
       );
     } else {
-      detail.geometry = geometryJsonUtils.fromJson(detail.geometry);
+      geometry = geometryJsonUtils.fromJson(detail.geometry);
     }
 
     if (detail.distance === null) {
       throw new TypeError("Expected detail.distance to be non-null.");
     }
 
-    detail.geometry = projection.project(detail.geometry as Geometry | Geometry[], spatialReference)
+    geometry = projection.project(geometry, spatialReference);
+    distance = detail.distance;
 
     // The geometry engine requires that the number of geometries and distances be the same.
     // If multiple distances are provided but only a single geometry, that geometry will be
     // buffered for each distance.
-    if (Array.isArray(detail.distance) && !Array.isArray(detail.geometry)) {
-      if (!(detail.geometry instanceof Geometry)) {
-        throw new TypeError(
-          "detail.geometry should be an ArcGIS API Geometry object by this point"
-        );
-      }
-      detail.geometry = (() => {
-        const outGeoArray = new Array<Geometry>(detail.distance.length);
-        for (let i = 0, l = detail.distance.length; i < l; i += 1) {
-          outGeoArray[i] = detail.geometry;
-        }
-        return outGeoArray;
-      })();
-    } else if (
-      !Array.isArray(detail.distance) &&
-      Array.isArray(detail.geometry)
-    ) {
-      detail.distance = (() => {
-        const outDistanceArray = new Array<number>();
-        for (let i = 0; i < detail.geometry.length; i++) {
-          outDistanceArray[i] = detail.distance;
-        }
-        return outDistanceArray;
-      })();
-    }
+    [geometry, distance] = ensureArraysAreSameLength(geometry, distance);
 
     geometryEngineAsync
-      .buffer(
-        detail.geometry as Geometry[] | Geometry,
-        detail.distance,
-        detail.unit,
-        detail.unionResults
-      )
+      .buffer(geometry, distance, detail.unit, detail.unionResults)
       .then(
         (bufferResults: Polygon | Polygon[]) => {
           console.log("buffer results", bufferResults);
           const unit = getUnitForId(detail.unit);
           // unit = unit.description;
-          const promises = new Array<Promise<number>>();
           if (bufferResults) {
             bufferFeatureLayer.suspend();
             if (!Array.isArray(bufferResults)) {
               bufferResults = [bufferResults];
             }
-            bufferResults.forEach((geometry: Geometry, i: number) => {
-              const mapGeometry = projection.project(geometry, map.spatialReference);
-              const promise = geometryEngineAsync
-                .planarArea(geometry, 
-                  // typing incorrectly disallows the unit parameter to be undefined.
-                  // cast to unknown -> number | string to avoid TypeScript error.
-                  undefined as unknown as number | string
-                  )
-                .then(
-                  (area: number) => {
-                    console.debug("area", area);
-                    const acres = area / 4047;
-                    const graphic = new Graphic(mapGeometry as Geometry, undefined, {
+            const areaPromises = bufferResults.map(
+              async (currentGeometry: Geometry, i: number) => {
+                const mapGeometry = projection.project(
+                  currentGeometry,
+                  map.spatialReference
+                );
+                try {
+                  const area = await geometryEngineAsync.planarArea(
+                    currentGeometry,
+                    // typing incorrectly disallows the unit parameter to be undefined.
+                    // cast to unknown -> number | string to avoid TypeScript error.
+                    undefined as unknown as number | string
+                  );
+
+                  console.debug("area", area);
+                  const acres = area / 4047;
+                  const graphic = new Graphic(
+                    mapGeometry as Geometry,
+                    undefined,
+                    {
                       oid: oid++,
-                      distance: Array.isArray(detail.distance)
-                        ? detail.distance[i]
-                        : detail.distance,
+                      distance: Array.isArray(distance)
+                        ? distance[i]
+                        : distance,
                       unit: unit.description,
                       unioned: detail.unionResults,
                       area: acres < 1 ? acres * 43560 : acres,
                       areaUnit: acres < 1 ? "ft\u00b2" : "ac", // ft. squared or acres
-                    });
-                    bufferFeatureLayer.applyEdits([graphic]);
-                  },
-                  (error: Error) => {
-                    console.error("area", error);
-                    const graphic = new Graphic(mapGeometry as Geometry, undefined, {
+                    }
+                  );
+                  bufferFeatureLayer.applyEdits([graphic]);
+                } catch (error) {
+                  console.error("area", error);
+                  const graphic = new Graphic(
+                    mapGeometry as Geometry,
+                    undefined,
+                    {
                       oid: oid++,
-                      distance: Array.isArray(detail.distance)
-                        ? detail.distance[i]
-                        : detail.distance,
+                      distance: Array.isArray(distance)
+                        ? distance[i]
+                        : distance,
                       unit: unit.description,
                       unioned: detail.unionResults,
                       areaError: error,
-                    });
-                    bufferFeatureLayer.applyEdits([graphic]);
-                  }
-                );
-              promises.push(promise);
-            });
-            Promise.all(promises).then(
+                    }
+                  );
+                  bufferFeatureLayer.applyEdits([graphic]);
+                }
+              }
+            );
+
+            Promise.all(areaPromises).then(
               () => {
                 bufferFeatureLayer.resume();
               },
@@ -179,7 +167,38 @@ export function attachBufferUIToMap(
           console.error("buffer error", error);
         }
       );
-  });
+  };
+
+  buffer.form.addEventListener("buffer", bufferEventListener);
 
   return bufferFeatureLayer;
+}
+
+/**
+ * The geometry engine requires that the number of geometries and distances be the same.
+ * If multiple distances are provided but only a single geometry, that geometry will be
+ * buffered for each distance.
+ * @param geometry - Geometry
+ * @param distance - distance
+ * @returns - a tuple of geometry and distance. Both will either be a single
+ * value or both arrays of the same length.
+ */
+function ensureArraysAreSameLength(
+  geometry: Geometry | Geometry[],
+  distance: number | number[]
+) {
+  if (Array.isArray(distance) && !Array.isArray(geometry)) {
+    const outGeoArray = new Array<Geometry>(distance.length);
+    for (let i = 0, l = distance.length; i < l; i += 1) {
+      outGeoArray[i] = geometry;
+    }
+    return [outGeoArray, distance] as [Geometry[], number[]];
+  } else if (!Array.isArray(distance) && Array.isArray(geometry)) {
+    const outDistanceArray = new Array<number>(geometry.length);
+    for (let i = 0; i < geometry.length; i++) {
+      outDistanceArray[i] = distance;
+    }
+    return [geometry, outDistanceArray] as [Geometry[], number[]];
+  }
+  return [geometry, distance] as [Geometry, number];
 }
