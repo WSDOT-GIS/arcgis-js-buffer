@@ -2,11 +2,14 @@
   "private": true,
   "workspaces": [
     "packages/arcgis-buffer-ui",
-	"packages/connector-v3",
-	"packages/connector-v4",
-	"packages/demo-v3",
-	"packages/demo-v4"
+    "packages/connector-v3",
+    "packages/connector-v4",
+    "packages/demo-v3",
+    "packages/demo-v4"
   ],
+  "scripts": {
+    "lint": "eslint **/*.ts"
+  },
   "description": "This repository contains code for `@wsdot/arcgis-buffer-ui` and related packages.",
   "repository": {
     "type": "git",
@@ -17,5 +20,14 @@
   "bugs": {
     "url": "https://github.com/WSDOT-GIS/arcgis-js-buffer/issues"
   },
-  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme"
+  "homepage": "https://github.com/WSDOT-GIS/arcgis-js-buffer#readme",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2"
+  }
 }

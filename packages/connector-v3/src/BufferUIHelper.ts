@@ -2,50 +2,33 @@
  * This module is used to make the BufferUI interact with an ArcGIS API for JavaScript v3 map.
  */
 
+import {
+  BufferUI,
+  getUnitForId,
+  type IBufferEventDetail,
+} from "@wsdot/arcgis-buffer-ui";
 import Popup from "esri/dijit/Popup";
-import PopupTemplate from "esri/dijit/PopupTemplate";
 import Geometry from "esri/geometry/Geometry";
+import * as projection from "esri/geometry/projection";
+import Polygon from "esri/geometry/Polygon";
 import geometryEngineAsync from "esri/geometry/geometryEngineAsync";
 import geometryJsonUtils from "esri/geometry/jsonUtils";
-import Polygon from "esri/geometry/Polygon";
 import Graphic from "esri/graphic";
 import FeatureLayer from "esri/layers/FeatureLayer";
 import EsriMap from "esri/map";
-import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
+import SpatialReference from "esri/SpatialReference";
+import {
+  addBufferLink,
+  createBufferLayer,
+  createPopupTemplate,
+} from "./layerSetup";
+
+projection.load().then(() => console.debug("projection engine loaded"));
 
 /**
- * Adds a "buffer" link to an InfoWindow's ".actionList" section.
- * When clicked it will add the selected feature
- * to the BufferUI geometries list.
- * @param infoWindow - A Popup
- * @param bufferUI - A BufferUI object.
+ * Object ID for features. Will be incremented as features are added.
  */
-export function addBufferLink(infoWindow: Popup, bufferUI: BufferUI) {
-  const actionList = (infoWindow.domNode as Element).querySelector(".actionList");
-  if (!actionList) {
-    throw new Error("Info window does not have an element of class actionList.");
-  }
-  const link = document.createElement("a");
-  const docFrag = document.createDocumentFragment();
-  link.textContent = "Buffer";
-  link.href = "#";
-  link.title = "Add selected geometry to Buffer UI list";
-  link.classList.add("action");
-  link.classList.add("buffer");
-  // Add a space before adding link.
-  docFrag.appendChild(document.createTextNode(" "));
-  docFrag.appendChild(link);
-
-  link.onclick = () => {
-    const feature = infoWindow.features[infoWindow.selectedIndex];
-    bufferUI.addFeature(feature);
-
-    return false;
-  };
-
-  actionList.appendChild(docFrag);
-  return link;
-}
+let oid = 0;
 
 /**
  * Creates a feature layer and adds it to the map.
@@ -57,88 +40,12 @@ export function addBufferLink(infoWindow: Popup, bufferUI: BufferUI) {
 export function attachBufferUIToMap(
   map: EsriMap,
   buffer: BufferUI,
-  layerId: string = "Buffer"
+  layerId: string = "Buffer",
+  spatialReference: SpatialReference = new SpatialReference({ wkid: 2927 })
 ): FeatureLayer {
-  let oid = 0;
+  const popupTemplate = createPopupTemplate();
 
-  const popupTemplate = new PopupTemplate({
-    title: "Buffer",
-    fieldInfos: [
-      {
-        fieldName: "distance",
-        label: "Buffer Distance",
-        visible: true,
-        format: {
-          places: 0,
-          digitSeparator: true
-        }
-      },
-      {
-        fieldName: "unit",
-        label: "Measurement Unit",
-        visible: true
-      },
-      {
-        fieldName: "area",
-        label: "Area",
-        visible: true,
-        format: {
-          places: 0,
-          digitSeparator: true
-        }
-      },
-      {
-        fieldName: "areaUnit",
-        label: "Area Unit",
-        visible: true
-      }
-    ]
-  });
-
-  const bufferFeatureLayer = new FeatureLayer(
-    {
-      featureSet: null,
-      layerDefinition: {
-        geometryType: "esriGeometryPolygon",
-        fields: [
-          {
-            name: "oid",
-            type: "esriFieldTypeOID"
-          },
-          {
-            name: "distance",
-            type: "esriFieldTypeDouble"
-          },
-          {
-            name: "unit",
-            type: "esriFieldTypeString",
-            alias: "Measurement Unit"
-          },
-          {
-            name: "unioned",
-            type: "esriFieldTypeSmallInteger",
-            alias: "Is Unioned"
-          },
-          {
-            name: "area",
-            type: "esriFieldTypeDouble",
-            alias: "Area"
-          },
-          {
-            name: "areaUnit",
-            type: "esriFieldTypeString",
-            alias: "Area Unit"
-          }
-        ]
-      }
-    },
-    {
-      id: layerId,
-      className: "buffer"
-    }
-  );
-
-  bufferFeatureLayer.setInfoTemplate(popupTemplate);
+  const bufferFeatureLayer = createBufferLayer(layerId, popupTemplate);
 
   map.addLayer(bufferFeatureLayer);
 
@@ -148,97 +55,104 @@ export function attachBufferUIToMap(
     bufferFeatureLayer.clear();
   });
 
-  buffer.form.addEventListener("buffer", (e: any) => {
-    const { detail } = e;
+  const bufferEventListener = (e: Event) => {
+    const { detail } = e as CustomEvent<IBufferEventDetail>;
+
+    if (detail.geometry === null) {
+      throw new TypeError(
+        'Expected "buffer" event to have non-null "detail" property'
+      );
+    }
+
+    let geometry: Geometry | Geometry[];
+    let distance: number[] | number;
 
     // Convert regular objects into esri/Geometry objects.
     if (Array.isArray(detail.geometry)) {
-      detail.geometry = detail.geometry.map(
+      geometry = detail.geometry.map(
         geometryJsonUtils.fromJson,
         detail.geometry
       );
     } else {
-      detail.geometry = geometryJsonUtils.fromJson(detail.geometry);
+      geometry = geometryJsonUtils.fromJson(detail.geometry);
     }
+
+    if (detail.distance === null) {
+      throw new TypeError("Expected detail.distance to be non-null.");
+    }
+
+    geometry = projection.project(geometry, spatialReference);
+    distance = detail.distance;
 
     // The geometry engine requires that the number of geometries and distances be the same.
     // If multiple distances are provided but only a single geometry, that geometry will be
     // buffered for each distance.
-    if (Array.isArray(detail.distance) && !Array.isArray(detail.geometry)) {
-      detail.geometry = (() => {
-        const outGeoArray = new Array<Geometry>(detail.distance.length);
-        for (let i = 0, l = detail.distance.length; i < l; i += 1) {
-          outGeoArray[i] = detail.geometry;
-        }
-        return outGeoArray;
-      })();
-    } else if (
-      !Array.isArray(detail.distance) &&
-      Array.isArray(detail.geometry)
-    ) {
-      detail.distance = (() => {
-        const outDistanceArray = new Array<number>();
-        for (let i = 0; i < detail.geometry.length; i++) {
-          outDistanceArray[i] = detail.distance;
-        }
-        return outDistanceArray;
-      })();
-    }
+    [geometry, distance] = ensureArraysAreSameLength(geometry, distance);
 
     geometryEngineAsync
-      .buffer(
-        detail.geometry,
-        detail.distance,
-        detail.unit,
-        detail.unionResults
-      )
+      .buffer(geometry, distance, detail.unit, detail.unionResults)
       .then(
         (bufferResults: Polygon | Polygon[]) => {
           console.log("buffer results", bufferResults);
           const unit = getUnitForId(detail.unit);
           // unit = unit.description;
-          const promises = new Array<Promise<any>>();
           if (bufferResults) {
             bufferFeatureLayer.suspend();
             if (!Array.isArray(bufferResults)) {
               bufferResults = [bufferResults];
             }
-            bufferResults.forEach((geometry: Geometry, i: number) => {
-              const promise = geometryEngineAsync
-                .planarArea(geometry, undefined as any)
-                .then(
-                  (area: number) => {
-                    console.debug("area", area);
-                    const acres = area / 4047;
-                    const graphic = new Graphic(geometry, undefined, {
+            const areaPromises = bufferResults.map(
+              async (currentGeometry: Geometry, i: number) => {
+                const mapGeometry = projection.project(
+                  currentGeometry,
+                  map.spatialReference
+                );
+                try {
+                  const area = await geometryEngineAsync.planarArea(
+                    currentGeometry,
+                    // typing incorrectly disallows the unit parameter to be undefined.
+                    // cast to unknown -> number | string to avoid TypeScript error.
+                    undefined as unknown as number | string
+                  );
+
+                  console.debug("area", area);
+                  const acres = area / 4047;
+                  const graphic = new Graphic(
+                    mapGeometry as Geometry,
+                    undefined,
+                    {
                       oid: oid++,
-                      distance: Array.isArray(detail.distance)
-                        ? detail.distance[i]
-                        : detail.distance,
+                      distance: Array.isArray(distance)
+                        ? distance[i]
+                        : distance,
                       unit: unit.description,
                       unioned: detail.unionResults,
                       area: acres < 1 ? acres * 43560 : acres,
-                      areaUnit: acres < 1 ? "ft\u00b2" : "ac" // ft. squared or acres
-                    });
-                    bufferFeatureLayer.applyEdits([graphic]);
-                  },
-                  (error: Error) => {
-                    console.error("area", error);
-                    const graphic = new Graphic(geometry, undefined, {
+                      areaUnit: acres < 1 ? "ft\u00b2" : "ac", // ft. squared or acres
+                    }
+                  );
+                  bufferFeatureLayer.applyEdits([graphic]);
+                } catch (error) {
+                  console.error("area", error);
+                  const graphic = new Graphic(
+                    mapGeometry as Geometry,
+                    undefined,
+                    {
                       oid: oid++,
-                      distance: Array.isArray(detail.distance)
-                        ? detail.distance[i]
-                        : detail.distance,
+                      distance: Array.isArray(distance)
+                        ? distance[i]
+                        : distance,
                       unit: unit.description,
                       unioned: detail.unionResults,
-                      areaError: error
-                    });
-                    bufferFeatureLayer.applyEdits([graphic]);
-                  }
-                );
-              promises.push(promise);
-            });
-            Promise.all(promises).then(
+                      areaError: error,
+                    }
+                  );
+                  bufferFeatureLayer.applyEdits([graphic]);
+                }
+              }
+            );
+
+            Promise.all(areaPromises).then(
               () => {
                 bufferFeatureLayer.resume();
               },
@@ -253,7 +167,38 @@ export function attachBufferUIToMap(
           console.error("buffer error", error);
         }
       );
-  });
+  };
+
+  buffer.form.addEventListener("buffer", bufferEventListener);
 
   return bufferFeatureLayer;
+}
+
+/**
+ * The geometry engine requires that the number of geometries and distances be the same.
+ * If multiple distances are provided but only a single geometry, that geometry will be
+ * buffered for each distance.
+ * @param geometry - Geometry
+ * @param distance - distance
+ * @returns - a tuple of geometry and distance. Both will either be a single
+ * value or both arrays of the same length.
+ */
+function ensureArraysAreSameLength(
+  geometry: Geometry | Geometry[],
+  distance: number | number[]
+) {
+  if (Array.isArray(distance) && !Array.isArray(geometry)) {
+    const outGeoArray = new Array<Geometry>(distance.length);
+    for (let i = 0, l = distance.length; i < l; i += 1) {
+      outGeoArray[i] = geometry;
+    }
+    return [outGeoArray, distance] as [Geometry[], number[]];
+  } else if (!Array.isArray(distance) && Array.isArray(geometry)) {
+    const outDistanceArray = new Array<number>(geometry.length);
+    for (let i = 0; i < geometry.length; i++) {
+      outDistanceArray[i] = distance;
+    }
+    return [geometry, outDistanceArray] as [Geometry[], number[]];
+  }
+  return [geometry, distance] as [Geometry, number];
 }

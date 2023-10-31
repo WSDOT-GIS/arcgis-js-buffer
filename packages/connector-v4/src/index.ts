@@ -2,16 +2,16 @@
  * This module is used to make the BufferUI interact with an ArcGIS API for JavaScript v3 map.
  */
 
-import { BufferUI, getUnitForId } from "@wsdot/arcgis-buffer-ui";
-import Popup from "esri/widgets/Popup";
+import { BufferUI, IBufferEventDetail, getUnitForId } from "@wsdot/arcgis-buffer-ui";
+import Graphic from "esri/Graphic";
 import PopupTemplate from "esri/PopupTemplate";
 import Geometry from "esri/geometry/Geometry";
+import Polygon from "esri/geometry/Polygon";
 import geometryEngineAsync from "esri/geometry/geometryEngineAsync";
 import geometryJsonUtils from "esri/geometry/support/jsonUtils";
-import Polygon from "esri/geometry/Polygon";
-import Graphic from "esri/Graphic";
 import FeatureLayer from "esri/layers/FeatureLayer";
 import View from "esri/views/View";
+// import Popup from "esri/widgets/Popup";
 
 // /**
 //  * Adds a "buffer" link to an InfoWindow's ".actionList" section.
@@ -89,6 +89,7 @@ export function attachBufferUIToMap(
   });
 
   const bufferFeatureLayer = new FeatureLayer({
+    id: layerId,
     geometryType: "polygon",
     fields: [
       {
@@ -125,7 +126,7 @@ export function attachBufferUIToMap(
   bufferFeatureLayer.popupTemplate = popupTemplate;
 
   view.map.add(bufferFeatureLayer);
-  view.popup.on("trigger-action", event => {
+  view.popup.on("trigger-action", () => {
     buffer.addFeature(view.popup.selectedFeature);
   });
 
@@ -136,8 +137,8 @@ export function attachBufferUIToMap(
     });
   });
 
-  buffer.form.addEventListener("buffer", (e: any) => {
-    const { detail } = e;
+  buffer.form.addEventListener("buffer", (e: Event) => {
+    const { detail } = (e as CustomEvent<IBufferEventDetail>);
 
     // Convert regular objects into esri/Geometry objects.
     if (Array.isArray(detail.geometry)) {
@@ -156,7 +157,7 @@ export function attachBufferUIToMap(
       detail.geometry = (() => {
         const outGeoArray = new Array<Geometry>(detail.distance.length);
         for (let i = 0, l = detail.distance.length; i < l; i += 1) {
-          outGeoArray[i] = detail.geometry;
+          outGeoArray[i] = detail.geometry as Geometry;
         }
         return outGeoArray;
       })();
@@ -165,8 +166,11 @@ export function attachBufferUIToMap(
       Array.isArray(detail.geometry)
     ) {
       detail.distance = (() => {
-        const outDistanceArray = new Array<number>();
+        const outDistanceArray = new Array<number>(detail.geometry.length);
         for (let i = 0; i < detail.geometry.length; i++) {
+          if (detail.distance == null) {
+            throw new TypeError("Distance should not be null.")
+          }
           outDistanceArray[i] = detail.distance;
         }
         return outDistanceArray;
@@ -175,8 +179,8 @@ export function attachBufferUIToMap(
 
     geometryEngineAsync
       .buffer(
-        detail.geometry,
-        detail.distance,
+        detail.geometry as Geometry | Geometry[],
+        detail.distance as number | number[],
         detail.unit,
         detail.unionResults
       )
@@ -190,8 +194,8 @@ export function attachBufferUIToMap(
               bufferResults = [bufferResults];
             }
             bufferResults.forEach((geometry: Geometry, i: number) => {
-              const promise = geometryEngineAsync
-                .planarArea(geometry as Polygon, undefined as any)
+              geometryEngineAsync
+                .planarArea(geometry as Polygon)
                 .then(
                   (area: number) => {
                     console.debug("area", area);
